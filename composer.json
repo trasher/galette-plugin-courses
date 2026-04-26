@@ -1,0 +1,27 @@
+{
+    "name": "ccag42/galette-plugin-courses",
+    "description": "Galette plugin for managing courses, training and sport events",
+    "type": "galette-plugin",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "GaletteCourses\\": "lib/GaletteCourses/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GaletteCourses\\Tests\\": "tests/",
+            "Galette\\": "tests/stubs/Galette/",
+            "Analog\\": "tests/stubs/Analog/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

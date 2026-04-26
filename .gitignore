@@ -22,3 +22,9 @@ desktop.ini
 # Logs / temp
 *.log
 *.tmp
+
+# Composer / PHPUnit
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache

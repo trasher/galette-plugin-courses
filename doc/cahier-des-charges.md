@@ -576,6 +576,61 @@ Le developpement est organise en phases progressives.
 - Chaque helper retourne `null` si l'acces est autorise, sinon une `Response` 302 avec flash error pre-positionnee. Pattern d'usage : `if ($deny = $this->denyUnlessStaffOrGroupManager(...)) { return $deny; }`.
 - Trait utilise dans `RegistrationsController` (proxyRegisterForm, doProxyRegister) et `SessionsController` (exportRegistrations, mailSession, doEditCapacity, doPromoteWaitlist, doSessionForWaitlist), supprimant 7 duplications de la condition `!isAdmin && !isStaff[ && !isGroupManager]`.
 
+### Phase 20 - Mise en place de l'infrastructure de tests
+
+**Statut : EN COURS - 35 tests verts (ACL + securite token + templates email)**
+
+#### F20.1 - Outillage PHPUnit
+
+- `composer.json` ajoute (dev only) avec `phpunit/phpunit ^10.5`.
+- `phpunit.xml.dist` declare la suite `Unit` (`tests/Unit`), couverture restreinte a `lib/GaletteCourses`.
+- `.gitignore` complete : `/vendor/`, `/composer.lock`, `/.phpunit.cache/`, `/.phpunit.result.cache`.
+- Lancement : `composer install` puis `composer test` (ou `vendor/bin/phpunit`).
+
+#### F20.2 - Stubs Galette/Analog (test-only)
+
+- `tests/stubs/Galette/Core/Db.php` et `Login.php`, `tests/stubs/Analog/Analog.php` : doublures minimales auto-chargees uniquement en dev (`autoload-dev` PSR-4).
+- Ces stubs declarent juste assez de surface (methodes, propriete `Login::id` publique) pour que `PHPUnit::createMock()` genere une doublure utilisable sans depence sur le core Galette ni sur Laminas DB.
+- Aucun risque en production : `composer install --no-dev` ne charge pas ces classes ; en runtime, le vrai core Galette est utilise.
+
+#### F20.3 - Bootstrap de tests (`tests/bootstrap.php`)
+
+- Charge `vendor/autoload.php` et definit `_T()` comme fonction identite (en production, Galette installe la vraie). Sans ce stub, toute classe utilisant `_T()` dans un `match` (notamment `MailTemplate`) plante a l'instanciation des tests.
+- `phpunit.xml.dist` pointe vers ce fichier au lieu de `vendor/autoload.php` direct.
+
+#### F20.4 - Tests securite et ACL
+
+`tests/Unit/MemberPreferencesTest.php` (9 cas) :
+- `testFindMemberIdByTokenRejectsInvalidFormat` (data-provider, 8 cas : vide, longueur 47/49, majuscules, non-hex, espaces, payload SQL-like, mixte) — verifie que la regex `^[a-f0-9]{48}$` court-circuite avant tout `select`.
+- `testFindMemberIdByTokenAcceptsWellFormedTokenAndQueriesDb` — un token valide declenche bien un `select` sur la table prefs et retourne `null` si la BDD ne renvoie pas de ligne.
+
+`tests/Unit/Entity/EventTest.php` (11 cas) :
+- `canRegisterSelf` (3 cas) : superadmin / id<=0 / aucune restriction de groupe.
+- `canAccess` (8 cas, regression sur l'IDOR phase 19) :
+  - admin et staff acceptes meme sur draft
+  - groupmanager sur draft : accepte si createur, refuse sinon
+  - membre regulier sur draft : refuse
+  - validated + non restreint : accepte tout adherent
+  - validated + restreint sans group entries : accepte (pas de filtre = ouvert)
+  - groupmanager + group manage qui matche : accepte
+
+#### F20.5 - Tests templates email (`tests/Unit/Entity/MailTemplateTest.php`, 15 cas)
+
+- Substitution `MailTemplate::substitute` (7 cas) : remplacement simple / multiple / repete / inconnu / vars vides / chaine vide (gestion des `reason_block` / `comment_block` vides en cancellation) / cast d'un int.
+- Contrat des refs (`getAvailableRefs`) : 9 refs presentes, et les anciennes `publication` / `new_sessions` (supprimees en phase 15) absentes.
+- Phase 15 verrouillee (data-provider, 6 cas) : `event_description` est expose dans `getAvailableVars` pour `publication_manager`, `new_sessions_manager`, `instructor_assigned`, `waitlist_promotion`, `cancellation`, `waitlist_cancellation`.
+- Sanity : chaque variable annoncee dans `getAvailableVars` apparait dans le `getDefaultBody` correspondant (cas `instructor_assigned` comme tracer).
+
+#### F20.6 - A faire (suite, hors scope du mini)
+
+- `Event::canManage` / `canSubmit` / `canValidate` / `canReject` (~6 cas, mocks).
+- `RecurrenceHandler` : generation de dates weekly/biweekly/monthly + exclusions (~8 cas, logique pure).
+- `Session` : jauge, statut, fermeture, capacite (~10 cas mixte).
+- Promotion FIFO de la liste d'attente (`Registration::cancel` + `Waitlist::promoteNext`) — necessite probablement des tests d'integration MySQL (FK CASCADE et UNIQUE rendent les mocks peu representatifs).
+- CI GitHub Actions pour relancer la suite a chaque push.
+
+**Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
+
 ---
 
 ## 3. Architecture technique
