@@ -330,7 +330,7 @@ Le developpement est organise en phases progressives.
 - Colonne et index unique ajoutes par migration `scripts/upgrade-unsubscribe.sql`
 - Classe `MemberPreferences` : methodes `getOrCreateToken(int $memberId)`, `findMemberIdByToken(string $token)`, `unsubscribeByToken(string $token)`
 - `CourseNotification::sendMail()` envoie **un email par destinataire** (boucle) pour personnaliser le pied de message avec le lien `/plugins/courses/unsubscribe/{token}`
-- URL absolue construite depuis `preferences->pref_url` avec fallback `$_SERVER['HTTP_HOST']`
+- URL absolue construite depuis `preferences->pref_galette_url` (sans fallback `$_SERVER['HTTP_HOST']` pour eviter une Host header injection)
 - Nouveau controleur `UnsubscribeController` (public, sans middleware `$authenticate`) : route `GET /unsubscribe/{token}`
   - Signature Slim 4 + PHP-DI : `unsubscribe(Request $request, Response $response, string $token = ''): Response`
   - Etats : success, already_opted_out, invalid_token, error

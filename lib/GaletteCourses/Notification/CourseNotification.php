@@ -321,11 +321,11 @@ class CourseNotification
             return '';
         }
 
-        // Build base URL from admin-configured pref_url only.
+        // Build base URL from admin-configured pref_galette_url only.
         // Never use $_SERVER['HTTP_HOST'] (Host header injection risk).
-        $baseUrl = rtrim((string)($this->preferences->pref_url ?? ''), '/');
+        $baseUrl = rtrim((string)($this->preferences->pref_galette_url ?? ''), '/');
         if ($baseUrl === '') {
-            Analog::log('CourseNotification: pref_url not configured, unsubscribe link omitted.', Analog::WARNING);
+            Analog::log('CourseNotification: pref_galette_url not configured, unsubscribe link omitted.', Analog::WARNING);
             return '';
         }
         $unsubscribeUrl = $baseUrl . '/plugins/courses/unsubscribe/' . $token;
