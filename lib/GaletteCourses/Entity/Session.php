@@ -38,11 +38,11 @@ class Session
     public const STATUS_CANCELLED = 'cancelled';
 
     public const CANCEL_REASONS = [
-        'concours' => 'Competition',
-        'absence_moniteur' => 'Instructor absent',
-        'formation' => 'Training',
-        'meteo' => 'Weather',
-        'autre' => 'Other',
+        'competition'       => 'Competition',
+        'instructor_absent' => 'Instructor absent',
+        'training'          => 'Training',
+        'weather'           => 'Weather',
+        'other'             => 'Other',
     ];
 
     private int $id;
@@ -279,60 +279,43 @@ class Session
     }
 
     /**
-     * Returns date formatted as dd/mm/yyyy
+     * Returns date formatted in the active locale's short style
+     * (e.g. "27/04/2026" in fr_FR, "4/27/26" in en_US).
      */
     public function getFormattedDate(): string
     {
-        return date('d/m/Y', strtotime($this->session_date));
+        return (string)self::dateFormatter(\IntlDateFormatter::SHORT, \IntlDateFormatter::NONE)
+            ->format(strtotime($this->session_date));
     }
 
     /**
-     * Returns date formatted as "jj mmm aaaa" (e.g. "24 avr. 2026")
+     * Returns date formatted in the active locale's medium style
+     * (e.g. "27 avr. 2026" in fr_FR, "Apr 27, 2026" in en_US).
      */
     public function getFormattedDateShort(): string
     {
-        $ts = strtotime($this->session_date);
-        return (int)date('d', $ts)
-            . ' ' . self::FRENCH_MONTHS[(int)date('n', $ts)]
-            . ' ' . date('Y', $ts);
+        return (string)self::dateFormatter(\IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE)
+            ->format(strtotime($this->session_date));
     }
 
     /**
-     * Returns long French date (e.g. "Samedi 14 Mars 2026")
+     * Returns date with day name in the active locale's full style
+     * (e.g. "samedi 14 mars 2026" in fr_FR, "Saturday, March 14, 2026" in en_US).
      */
     public function getFormattedDateLong(): string
     {
-        $ts = strtotime($this->session_date);
-        return self::FRENCH_DAYS[(int)date('w', $ts)]
-            . ' ' . (int)date('d', $ts)
-            . ' ' . self::FRENCH_MONTHS_FULL[(int)date('n', $ts)]
-            . ' ' . date('Y', $ts);
+        return (string)self::dateFormatter(\IntlDateFormatter::FULL, \IntlDateFormatter::NONE)
+            ->format(strtotime($this->session_date));
     }
 
-    private const FRENCH_DAYS = [
-        0 => 'Dimanche', 1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi',
-        4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi',
-    ];
-
-    private const FRENCH_MONTHS = [
-        1 => 'janv.', 2 => 'févr.', 3 => 'mars', 4 => 'avr.',
-        5 => 'mai', 6 => 'juin', 7 => 'juil.', 8 => 'août',
-        9 => 'sept.', 10 => 'oct.', 11 => 'nov.', 12 => 'déc.',
-    ];
-
-    private const FRENCH_MONTHS_FULL = [
-        1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
-        5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
-        9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre',
-    ];
-
     /**
-     * Returns abbreviated French month + year (e.g. "mars 2026")
+     * Returns abbreviated month + year in the active locale
+     * (e.g. "mars 2026" in fr_FR, "Mar 2026" in en_US).
      */
     public function getMonthYear(): string
     {
-        $ts = strtotime($this->session_date);
-        return self::FRENCH_MONTHS[(int)date('n', $ts)] . ' ' . date('Y', $ts);
+        return (string)self::dateFormatter(null, null, 'MMM yyyy')
+            ->format(strtotime($this->session_date));
     }
 
     public function getStartTime(): string
@@ -346,19 +329,63 @@ class Session
     }
 
     /**
-     * Returns start time formatted as HhMM (e.g. "14h00")
+     * Returns start time formatted in the active locale's short style
+     * (e.g. "14:00" in fr_FR, "2:00 PM" in en_US).
      */
     public function getFormattedStartTime(): string
     {
-        return date('G\hi', strtotime($this->start_time));
+        return (string)self::dateFormatter(\IntlDateFormatter::NONE, \IntlDateFormatter::SHORT)
+            ->format(strtotime($this->start_time));
     }
 
     /**
-     * Returns end time formatted as HhMM (e.g. "15h00")
+     * Returns end time formatted in the active locale's short style
+     * (e.g. "15:00" in fr_FR, "3:00 PM" in en_US).
      */
     public function getFormattedEndTime(): string
     {
-        return date('G\hi', strtotime($this->end_time));
+        return (string)self::dateFormatter(\IntlDateFormatter::NONE, \IntlDateFormatter::SHORT)
+            ->format(strtotime($this->end_time));
+    }
+
+    /**
+     * Build an IntlDateFormatter for the active Galette locale.
+     * Falls back to PHP's default locale, then to fr_FR.
+     */
+    private static function dateFormatter(
+        ?int $dateType,
+        ?int $timeType,
+        ?string $pattern = null
+    ): \IntlDateFormatter {
+        $locale = self::currentLocale();
+        $fmt = new \IntlDateFormatter(
+            $locale,
+            $dateType ?? \IntlDateFormatter::NONE,
+            $timeType ?? \IntlDateFormatter::NONE
+        );
+        if ($pattern !== null) {
+            $fmt->setPattern($pattern);
+        }
+        return $fmt;
+    }
+
+    private static function currentLocale(): string
+    {
+        // Galette exposes the active language via the global $i18n service.
+        // Fall back to PHP's default locale (set by Galette bootstrap or the OS),
+        // then to fr_FR as a last resort so dates never come out as raw timestamps.
+        if (
+            isset($GLOBALS['i18n'])
+            && is_object($GLOBALS['i18n'])
+            && method_exists($GLOBALS['i18n'], 'getLongID')
+        ) {
+            $id = (string)$GLOBALS['i18n']->getLongID();
+            if ($id !== '') {
+                return $id;
+            }
+        }
+        $default = \Locale::getDefault();
+        return $default !== '' ? $default : 'fr_FR';
     }
 
     public function getStatus(): string
@@ -397,12 +424,12 @@ class Session
             return '';
         }
         return match ($this->cancellation_reason) {
-            'concours' => _T('Competition', 'courses'),
-            'absence_moniteur' => _T('Instructor absent', 'courses'),
-            'formation' => _T('Training', 'courses'),
-            'meteo' => _T('Weather', 'courses'),
-            'autre' => _T('Other', 'courses'),
-            default => $this->cancellation_reason,
+            'competition'       => _T('Competition', 'courses'),
+            'instructor_absent' => _T('Instructor absent', 'courses'),
+            'training'          => _T('Training', 'courses'),
+            'weather'           => _T('Weather', 'courses'),
+            'other'             => _T('Other', 'courses'),
+            default             => $this->cancellation_reason,
         };
     }
 

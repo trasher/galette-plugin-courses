@@ -631,6 +631,37 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 21 - Internationalisation de Session (cles BDD et formatage des dates)
+
+**Statut : TERMINEE - 52 tests verts**
+
+#### F21.1 - Cles `CANCEL_REASONS` rendues langue-neutres
+
+- Probleme : les cles stockees en BDD pour le motif d'annulation etaient en francais (`concours`, `absence_moniteur`, `formation`, `meteo`, `autre`). Cles francaises + libelles affiches via `_T()` = incoherent ; impossible d'utiliser le plugin dans une autre langue sans confusion (debug logs, exports CSV, requetes SQL ad-hoc).
+- Renommage en anglais neutre : `competition`, `instructor_absent`, `training`, `weather`, `other`.
+- 3 fichiers impactes : `lib/GaletteCourses/Entity/Session.php` (constante + match dans `getCancellationReasonLabel`), `templates/default/pages/session_show.html.twig` (options du `<select>` du formulaire d'annulation).
+- Migration BDD : `scripts/upgrade-cancel-reasons-i18n.sql` (5 UPDATEs, idempotents).
+
+#### F21.2 - Formatage des dates via `IntlDateFormatter`
+
+- Suppression des constantes `FRENCH_DAYS`, `FRENCH_MONTHS`, `FRENCH_MONTHS_FULL` qui hardcodaient les jours et mois en francais.
+- Toutes les methodes de formatage (`getFormattedDate`, `getFormattedDateShort`, `getFormattedDateLong`, `getMonthYear`, `getFormattedStartTime`, `getFormattedEndTime`) utilisent desormais `IntlDateFormatter` avec la locale active.
+- Helper prive `Session::currentLocale()` : prefere `$GLOBALS['i18n']->getLongID()` si defini (pattern Galette), sinon `\Locale::getDefault()`, sinon fallback `fr_FR`. Aucun changement d'API externe.
+- Necessite l'extension PHP `intl` (deja requise par Galette).
+
+#### F21.3 - Tests de regression i18n (`tests/Unit/Entity/SessionTest.php`, 17 cas)
+
+- `CANCEL_REASONS` (12 cas) : verifie l'ordre exact des nouvelles cles, qu'aucune des 5 anciennes cles francaises ne reapparaisse (data-provider, regression), que `getCancellationReasonLabel` retourne le bon libelle pour chaque nouvelle cle (data-provider), et qu'une session sans motif retourne une chaine vide.
+- Formatage locale (5 cas) : `getFormattedDateShort` en `fr_FR` retourne "27 avr. 2026" (regex sur 'avr'), en `en_US` retourne "Apr 27, 2026" ; `getMonthYear` change selon la locale ; `getFormattedDateLong` en FR contient "lundi" (jour de semaine) ; `getFormattedStartTime` en FR retourne `14:00`.
+- `setUp`/`tearDown` sauvegardent et restaurent `\Locale::getDefault()` pour ne pas polluer les autres tests.
+
+#### F21.4 - A faire (deploiement en prod)
+
+1. Uploader `lib/GaletteCourses/Entity/Session.php` et `templates/default/pages/session_show.html.twig` corriges.
+2. Lancer `scripts/upgrade-cancel-reasons-i18n.sql` sur la BDD prod (1 seule ligne a migrer dans le cas CCAG42 actuel).
+3. Vider opcache PHP si applicable.
+4. Verifier que l'extension `intl` est chargee cote serveur (Galette la requiert deja).
+
 ---
 
 ## 3. Architecture technique
