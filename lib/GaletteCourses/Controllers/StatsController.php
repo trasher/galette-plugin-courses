@@ -131,9 +131,15 @@ class StatsController extends AbstractController
     {
         $data = [];
         try {
+            // DATE_FORMAT is MySQL-only; TO_CHAR is the PostgreSQL equivalent.
+            // Built once and reused for SELECT and GROUP BY so the two stay aligned.
+            $monthExpr = $this->zdb->isPostgres()
+                ? "TO_CHAR(registration_date, 'YYYY-MM')"
+                : "DATE_FORMAT(registration_date, '%Y-%m')";
+
             $select = $this->zdb->select(Registration::TABLE);
             $select->columns([
-                'month' => new Expression("DATE_FORMAT(registration_date, '%Y-%m')"),
+                'month' => new Expression($monthExpr),
                 'count' => new Expression('COUNT(*)'),
             ]);
             $select->where->equalTo('status', Registration::STATUS_REGISTERED);
@@ -141,7 +147,7 @@ class StatsController extends AbstractController
                 'registration_date',
                 date('Y-m-d', strtotime('-12 months'))
             );
-            $select->group([new Expression("DATE_FORMAT(registration_date, '%Y-%m')")]);
+            $select->group([new Expression($monthExpr)]);
             $select->order('month ASC');
 
             $results = $this->zdb->execute($select);
@@ -265,11 +271,19 @@ class StatsController extends AbstractController
             $statusAttended           = Registration::STATUS_ATTENDED;
             $statusPresentUnregistered = Registration::STATUS_PRESENT_UNREGISTERED;
 
+            // GROUP_CONCAT is MySQL-only; STRING_AGG is the PostgreSQL equivalent
+            // (supports ORDER BY inside the aggregate since PG 9.x).
+            $concatExpr = $this->zdb->isPostgres()
+                ? "STRING_AGG(DISTINCT e.name, ', ' ORDER BY e.name)"
+                : "GROUP_CONCAT(DISTINCT e.name ORDER BY e.name SEPARATOR ', ')";
+
+            // `WHERE a.activite_adh` (no `= 1`) is truthy in both MySQL (tinyint(1))
+            // and PostgreSQL (boolean) — `= 1` would fail under PostgreSQL's strict typing.
             $sql = "SELECT a.id_adh, a.nom_adh, a.prenom_adh, a.pseudo_adh,
                         COUNT(DISTINCT s.$pkSess) AS session_count,
                         COUNT(DISTINCT CASE WHEN r.status IN ('$statusAttended', '$statusPresentUnregistered')
                             THEN s.$pkSess END) AS attendance_count,
-                        GROUP_CONCAT(DISTINCT e.name ORDER BY e.name SEPARATOR ', ') AS events
+                        $concatExpr AS events
                     FROM $tAdh a
                     LEFT JOIN $tReg r
                         ON r.member_id = a.id_adh
@@ -279,7 +293,7 @@ class StatsController extends AbstractController
                         AND s.session_date BETWEEN ? AND ?
                     LEFT JOIN $tEvt e
                         ON e.$pkEvt = s.event_id
-                    WHERE a.activite_adh = 1
+                    WHERE a.activite_adh
                     GROUP BY a.id_adh, a.nom_adh, a.prenom_adh, a.pseudo_adh
                     ORDER BY a.nom_adh ASC, a.prenom_adh ASC";
 

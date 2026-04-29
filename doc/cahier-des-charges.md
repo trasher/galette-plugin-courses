@@ -631,6 +631,35 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 22 - Support PostgreSQL (schema + code SQL)
+
+**Statut : TERMINEE**
+
+#### F22.1 - Schema PostgreSQL
+
+- Probleme : Galette supporte MySQL, MariaDB et PostgreSQL, mais le plugin ne fournissait que `scripts/mysql.sql`. Tout utilisateur de Galette sur PostgreSQL ne pouvait pas installer le plugin (rappel par Johan Cwiklinski, mainteneur Galette).
+- Ajout de `scripts/pgsql.sql` : equivalent PostgreSQL des 11 tables. Conversions cles : `int unsigned auto_increment` -> `serial`, `tinyint(1)` -> `boolean`, `decimal(10,2)` -> `numeric(10,2)`, `datetime` -> `timestamp`, `KEY idx (...)` -> `CREATE INDEX` separe, `UNIQUE KEY` -> contrainte `UNIQUE` inline, suppression du bloc `ENGINE=InnoDB ... CHARSET=utf8mb4`. `DROP TABLE ... CASCADE` ajoute pour gerer les FK lors de reinstall.
+- Ajout de `scripts/upgrade-unsubscribe-pgsql.sql` (variante PostgreSQL de `upgrade-unsubscribe.sql`) : `ALTER TABLE` + `ADD CONSTRAINT ... UNIQUE` au lieu de la syntaxe MySQL `ADD UNIQUE KEY ... AFTER ...`.
+- `scripts/upgrade-cancel-reasons-i18n.sql` est compose uniquement d'`UPDATE` standard : compatible des deux moteurs sans variante.
+
+#### F22.2 - Adaptation du code PHP pour cross-DB
+
+- `StatsController::getRegistrationsByMonth` : `DATE_FORMAT(registration_date, '%Y-%m')` (MySQL only) remplace par un branchement sur `$this->zdb->isPostgres()` qui choisit entre `TO_CHAR(registration_date, 'YYYY-MM')` (PostgreSQL) et `DATE_FORMAT(...)` (MySQL/MariaDB). Variable partagee entre `SELECT` et `GROUP BY` pour garantir l'alignement.
+- `StatsController::getMemberActivityByPeriod` : `GROUP_CONCAT(DISTINCT e.name ORDER BY e.name SEPARATOR ', ')` (MySQL only) remplace par un branchement vers `STRING_AGG(DISTINCT e.name, ', ' ORDER BY e.name)` (PostgreSQL 9.x+) sur PostgreSQL.
+- Meme methode : `WHERE a.activite_adh = 1` remplace par `WHERE a.activite_adh` (truthy). PostgreSQL refuse `boolean = integer` ; ecrire la condition sans operateur explicite fonctionne pour MySQL (tinyint(1)) comme PostgreSQL (boolean).
+- Audit des 17 autres `Expression()` du plugin : tous SQL standard (`COUNT(*)`, `COUNT(DISTINCT)`, `MAX(...)`, `AVG(...)`, `ROUND(...)`, `CASE WHEN ... THEN ... END`) - aucun changement requis.
+
+#### F22.3 - Stub `Db::isPostgres()` pour les tests
+
+- `tests/stubs/Galette/Core/Db.php` complete avec `isPostgres()`, `isMysql()`, `isMariaDB()` (tous no-ops retournant la valeur par defaut MySQL) pour permettre l'instanciation des controllers sous test sans erreur.
+- Suite toujours 53/53 verte.
+
+#### F22.4 - A faire (deploiement Postgres)
+
+1. Installer le plugin sur une instance Galette/PostgreSQL : lancer `scripts/pgsql.sql`.
+2. Si install existante a migrer : lancer `scripts/upgrade-unsubscribe-pgsql.sql` puis `scripts/upgrade-cancel-reasons-i18n.sql`.
+3. Tester la page Statistiques (les requetes `DATE_FORMAT` / `GROUP_CONCAT` y vivent) sur Postgres.
+
 ### Phase 21 - Internationalisation de Session (cles BDD et formatage des dates)
 
 **Statut : TERMINEE - 52 tests verts**

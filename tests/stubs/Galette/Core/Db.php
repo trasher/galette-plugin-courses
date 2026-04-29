@@ -46,4 +46,19 @@ class Db
     {
         return 0;
     }
+
+    public function isPostgres(): bool
+    {
+        return false;
+    }
+
+    public function isMysql(): bool
+    {
+        return true;
+    }
+
+    public function isMariaDB(): bool
+    {
+        return false;
+    }
 }
