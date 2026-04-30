@@ -59,9 +59,13 @@ tr.courses-pending { background-color: #fffde7 !important; }
 /* ----- ACTION BUTTONS ----- */
 /* Flexbox row keeps action buttons aligned horizontally on desktop and lets
    them wrap cleanly when the segment narrows. The mobile media query below
-   switches to flex-direction: column for the stacked vertical layout. */
+   switches to flex-direction: column for the stacked vertical layout.
+   `!important` + the .ui.segment-prefixed selector are needed because
+   Fomantic's .ui.basic.segment outweighs a single .courses-actions class
+   on specificity. */
+.ui.segment.courses-actions,
 .courses-actions {
-    display: flex;
+    display: flex !important;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
@@ -228,8 +232,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
     /* --- Action segments --- */
     /* On mobile the same flexbox container switches to a vertical stack,
        with each child taking the full width of the row. */
+    .ui.segment.courses-actions,
     .courses-actions {
-        flex-direction: column;
+        flex-direction: column !important;
         align-items: stretch;
         text-align: center;
     }
