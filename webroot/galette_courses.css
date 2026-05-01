@@ -26,6 +26,37 @@
 .courses-divider-top0 { margin-top: 0 !important; }
 .courses-input-narrow { width: 6em; }
 .courses-input-medium { width: 12em; }
+
+/* ----- INFO LIST (label/value on same line) ----- */
+.courses-info-list .item {
+    display: flex !important;
+    align-items: center;
+    gap: .6em;
+    padding: .5em 0 !important;
+}
+.courses-info-list .item > i.icon {
+    display: inline-flex !important;
+    flex-shrink: 0;
+    margin: 0 !important;
+    width: 1.4em;
+    color: #888;
+}
+.courses-info-list .item > .content {
+    display: flex !important;
+    flex: 1;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4em .8em;
+    min-width: 0;
+}
+.courses-info-list .item > .content > .header {
+    display: inline !important;
+    margin: 0 !important;
+    font-weight: 600;
+    color: #555;
+    font-size: .95em;
+}
 .courses-member-inline { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; }
 .courses-unregister-row { display: flex; align-items: center; gap: .8em; flex-wrap: wrap; justify-content: center; }
 .courses-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -339,9 +370,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .ui.inverted.segment h2.ui.inverted.header .sub.header { font-size: .88em !important; line-height: 1.7 !important; }
     .courses-mobile-br { display: inline !important; }
 
-    /* --- Member-inline --- */
+    /* --- Member-inline: keep remove (X) button inline with the name on mobile --- */
     .courses-member-inline { flex-wrap: wrap; }
-    .courses-remove-form { margin-left: 0; width: 100%; }
+    .courses-remove-form { margin-left: auto !important; width: auto !important; flex-shrink: 0; }
 
     /* --- Accordion titles --- */
     .ui.accordion .title { padding: .85em 1em !important; min-height: 44px; display: flex !important; align-items: center !important; }

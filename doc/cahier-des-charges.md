@@ -657,6 +657,14 @@ Le developpement est organise en phases progressives.
   - Cellule `.courses-attendance-cell` du tableau responsive : le `<select>` Fomantic prend `width: 100%; min-height: 44px` (touch target standard) et `flex-wrap: wrap` pour que le label `data-label` passe au-dessus du dropdown si necessaire.
   - Modales : `.ui.modal > .actions` passe en `flex-direction: column; gap: .4em` ; tous les boutons et formulaires inline a l'interieur prennent `width: 100%`.
 
+- Iteration UX (suite a feedback "la croix pour supprimer un moniteur devrait etre en face du nom ; idem pour information") :
+  - Section moniteurs : la regle mobile forcait `.courses-remove-form { width: 100% }` -> faisait passer le bouton X sur la ligne suivante. Remplace par `width: auto !important; flex-shrink: 0; margin-left: auto !important;` -> bouton X reste sur la meme ligne que le nom du moniteur, aligne a droite (la wrap est conservee si le nom est tres long, fallback acceptable).
+  - Panneau "Information" (colonne droite) : la liste `<div class="ui relaxed list">` empilait verticalement le titre (Status / Price / Unregistration deadline) et la valeur. Ajout de la classe `courses-info-list` ; rules CSS globales (desktop + mobile) :
+    - `.item` passe en `display: flex; align-items: center` (override du `display: list-item; table-layout` Fomantic)
+    - `.content` passe en `display: flex; justify-content: space-between; flex-wrap: wrap`
+    - `.header` passe en `display: inline; font-weight: 600` (au lieu de bloc)
+    - Resultat : `[icone] Status                            [label vert]` sur une seule ligne, value alignee a droite. Lecture beaucoup plus rapide.
+
 ### Phase 24 - Alignement horizontal des boutons d'action sur PC
 
 **Statut : TERMINEE**
