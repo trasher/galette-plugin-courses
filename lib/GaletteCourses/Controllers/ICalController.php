@@ -82,7 +82,7 @@ class ICalController extends AbstractController
     public function myRegistrationsIcal(Request $request, Response $response): Response
     {
         $member_id = (int)$this->login->id;
-        $regs_repo = new Registrations($this->zdb, $this->login);
+        $regs_repo = new Registrations($this->zdb);
         $registrations = $regs_repo->getForMember($member_id);
 
         $sessions = [];

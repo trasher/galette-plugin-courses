@@ -39,6 +39,9 @@ class EventType
     private int $id;
     private string $label;
 
+    /**
+     * @param int|ArrayObject<string, int|string>|null $args
+     */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
         if (is_int($args)) {

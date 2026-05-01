@@ -433,7 +433,7 @@ class RegistrationsController extends AbstractController
             $reg_members[$member_id] = ['name' => '', 'nickname' => ''];
         }
 
-        $regs_repo = new Registrations($this->zdb, $this->login);
+        $regs_repo = new Registrations($this->zdb);
         $registrations = $regs_repo->getForMembers($member_ids);
 
         // Load session and event info for each registration
@@ -586,7 +586,7 @@ class RegistrationsController extends AbstractController
             }
         }
 
-        $regs_repo = new Registrations($this->zdb, $this->login, $filters);
+        $regs_repo = new Registrations($this->zdb, $filters);
         $registrations = $regs_repo->getList();
         $available_names = $regs_repo->getAvailableNames();
 
@@ -726,7 +726,7 @@ class RegistrationsController extends AbstractController
             $results = $this->zdb->execute($select);
 
             // Get already registered members
-            $regs_repo = new Registrations($this->zdb, $this->login);
+            $regs_repo = new Registrations($this->zdb);
             $registrations = $regs_repo->getForSession($id);
             $registered_ids = [];
             foreach ($registrations as $reg) {
@@ -790,7 +790,7 @@ class RegistrationsController extends AbstractController
             $childrenIds = $parentAdherent->children ?? [];
 
             // Children already registered for this session
-            $regs_repo = new Registrations($this->zdb, $this->login);
+            $regs_repo = new Registrations($this->zdb);
             $registrations = $regs_repo->getForSession($id);
             $registered_ids = array_map(fn($r) => $r->getMemberId(), $registrations);
 

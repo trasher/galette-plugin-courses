@@ -50,6 +50,9 @@ class Registration
     private string $status = self::STATUS_REGISTERED;
     private ?int $registered_by = null;
 
+    /**
+     * @param int|ArrayObject<string, int|string>|null $args
+     */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
         if (is_int($args)) {
@@ -88,7 +91,7 @@ class Registration
         $this->member_id = (int)$rs->member_id;
         $this->registration_date = (string)$rs->registration_date;
         $this->status = (string)$rs->status;
-        $this->registered_by = isset($rs->registered_by) && $rs->registered_by !== null ? (int)$rs->registered_by : null;
+        $this->registered_by = isset($rs->registered_by) ? (int)$rs->registered_by : null;
     }
 
     public function store(Session $session): bool

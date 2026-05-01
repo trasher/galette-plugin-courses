@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace GaletteCourses\Repository;
 
 use Galette\Core\Db;
-use Galette\Core\Login;
 use GaletteCourses\Entity\Event;
 use GaletteCourses\Entity\Registration;
 use GaletteCourses\Entity\Session;
@@ -43,7 +42,6 @@ class Registrations
 
     public function __construct(
         private Db $zdb,
-        private Login $login,
         private ?RegistrationsList $filters = null
     ) {
         if ($this->filters === null) {

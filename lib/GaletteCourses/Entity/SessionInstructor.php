@@ -42,6 +42,9 @@ class SessionInstructor
     private string $assigned_date;
     private ?int $assigned_by = null;
 
+    /**
+     * @param int|ArrayObject<string, int|string>|null $args
+     */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
         if (is_int($args)) {

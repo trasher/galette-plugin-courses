@@ -415,7 +415,7 @@ class Sessions
 
     private function buildOrderClause(): string
     {
-        $order = match ($this->filters->orderby) {
+        $order = match ((int)$this->filters->orderby) {
             SessionsList::ORDERBY_DATE => 's.session_date',
             SessionsList::ORDERBY_EVENT => 'e.name',
             default => 's.session_date',

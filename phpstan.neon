@@ -2,6 +2,7 @@ parameters:
     parallel:
         maximumNumberOfProcesses: 2
     level: 6
+    treatPhpDocTypesAsCertain: false
     paths:
         - lib/
     scanFiles:

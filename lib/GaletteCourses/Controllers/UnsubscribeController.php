@@ -72,7 +72,7 @@ class UnsubscribeController extends AbstractController
             }
         }
 
-        return $this->view->render(
+        $this->view->render(
             $response,
             $this->getTemplate('pages/unsubscribe'),
             [
@@ -82,5 +82,6 @@ class UnsubscribeController extends AbstractController
                 'invalid_token'    => ($token === '' || (!$success && !$alreadyOptedOut)),
             ]
         );
+        return $response;
     }
 }

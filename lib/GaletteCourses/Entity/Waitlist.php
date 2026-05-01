@@ -42,6 +42,9 @@ class Waitlist
     private int $position;
     private string $added_date;
 
+    /**
+     * @param int|ArrayObject<string, int|string>|null $args
+     */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
         if (is_int($args)) {

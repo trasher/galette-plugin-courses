@@ -233,7 +233,7 @@ class Events
 
     private function buildOrderClause(): string
     {
-        $order = match ($this->filters->orderby) {
+        $order = match ((int)$this->filters->orderby) {
             EventsList::ORDERBY_NAME => 'e.name',
             EventsList::ORDERBY_DATE => 'e.creation_date',
             EventsList::ORDERBY_STATUS => 'e.status',

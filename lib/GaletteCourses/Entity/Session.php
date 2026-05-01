@@ -61,6 +61,9 @@ class Session
 
     private ?Event $event = null;
 
+    /**
+     * @param int|ArrayObject<string, int|string>|null $args
+     */
     public function __construct(private Db $zdb, int|ArrayObject|null $args = null)
     {
         if (is_int($args)) {
@@ -413,7 +416,7 @@ class Session
             }
         }
         $default = \Locale::getDefault();
-        return $default !== '' ? $default : 'fr_FR';
+        return $default ?: 'fr_FR';
     }
 
     public function getStatus(): string

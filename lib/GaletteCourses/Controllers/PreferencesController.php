@@ -56,11 +56,12 @@ class PreferencesController extends AbstractController
             'is_admin'              => $this->login->isAdmin() || $this->login->isSuperAdmin(),
         ];
 
-        return $this->view->render(
+        $this->view->render(
             $response,
             $this->getTemplate('pages/preferences'),
             $params
         );
+        return $response;
     }
 
     public function doSave(Request $request, Response $response): Response

@@ -376,6 +376,9 @@ class EventsController extends AbstractPluginController
         }
     }
 
+    /**
+     * @param array<string, mixed> $post
+     */
     private function createSessionForEvent(Event $event, array $post): void
     {
         $session = new Session($this->zdb);

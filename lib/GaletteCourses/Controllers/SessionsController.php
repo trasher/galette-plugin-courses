@@ -176,7 +176,7 @@ class SessionsController extends AbstractPluginController
         }
 
         // Load registrations for this session
-        $regs_repo = new Registrations($this->zdb, $this->login);
+        $regs_repo = new Registrations($this->zdb);
         $registrations = $regs_repo->getForSession($id);
 
         // Load member names and nicknames for registrations
@@ -1048,16 +1048,17 @@ class SessionsController extends AbstractPluginController
 
         if (!$this->canEditSession($session)) {
             $this->flash->addMessage('error_detected', _T('This session can no longer be edited.', 'courses'));
-            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => $id]));
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
         $event = new Event($this->zdb, $session->getEventId());
 
-        return $this->view->render($response, $this->getTemplate('pages/session_edit'), [
+        $this->view->render($response, $this->getTemplate('pages/session_edit'), [
             'page_title' => _T('Edit session', 'courses'),
             'session'    => $session,
             'event'      => $event,
         ]);
+        return $response;
     }
 
     public function doEdit(Request $request, Response $response, int $id): Response
@@ -1070,7 +1071,7 @@ class SessionsController extends AbstractPluginController
 
         if (!$this->canEditSession($session)) {
             $this->flash->addMessage('error_detected', _T('This session can no longer be edited.', 'courses'));
-            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => $id]));
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
         }
 
         $post = $request->getParsedBody();
@@ -1108,7 +1109,7 @@ class SessionsController extends AbstractPluginController
             foreach ($errors as $err) {
                 $this->flash->addMessage('error_detected', $err);
             }
-            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionEdit', ['id' => $id]));
+            return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionEdit', ['id' => (string)$id]));
         }
 
         $session->setSessionDate($date);
@@ -1124,7 +1125,7 @@ class SessionsController extends AbstractPluginController
             $this->flash->addMessage('error_detected', _T('An error occurred while saving the session.', 'courses'));
         }
 
-        return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => $id]));
+        return $response->withStatus(302)->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
     }
 
     public function exportRegistrations(Request $request, Response $response, int $id): Response
@@ -1257,7 +1258,8 @@ class SessionsController extends AbstractPluginController
         }
 
         // --- Generate CSV with UTF-8 BOM for Excel ---
-        $eventSlug = preg_replace('/[^a-z0-9]+/', '-', strtolower($event->getName() ?? 'session'));
+        $eventName = $event->getName();
+        $eventSlug = preg_replace('/[^a-z0-9]+/', '-', strtolower($eventName !== '' ? $eventName : 'session'));
         $filename  = 'seance_' . $session->getSessionDate() . '_' . $eventSlug . '.csv';
 
         $csvLines = [];

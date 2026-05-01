@@ -64,11 +64,12 @@ class MailTemplatesController extends AbstractController
             'require_tabs'  => true,
         ];
 
-        return $this->view->render(
+        $this->view->render(
             $response,
             $this->getTemplate('pages/mail_templates'),
             $params
         );
+        return $response;
     }
 
     /**
@@ -105,6 +106,8 @@ class MailTemplatesController extends AbstractController
 
     /**
      * Reset one template to default (delete custom version from DB).
+     *
+     * @param array<string, string> $args
      */
     public function doReset(Request $request, Response $response, array $args): Response
     {

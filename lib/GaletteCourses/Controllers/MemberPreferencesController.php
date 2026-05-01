@@ -55,11 +55,12 @@ class MemberPreferencesController extends AbstractController
             'no_member_record' => !$hasMemberRecord,
         ];
 
-        return $this->view->render(
+        $this->view->render(
             $response,
             $this->getTemplate('pages/member_preferences'),
             $params
         );
+        return $response;
     }
 
     public function doSave(Request $request, Response $response): Response
