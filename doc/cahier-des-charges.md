@@ -631,6 +631,32 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 25 - Optimisation responsive du detail des seances (smartphones)
+
+**Statut : TERMINEE**
+
+- Probleme : la page `session_show.html.twig` reste tres dense sur smartphone. Le tableau des inscrits scrollait horizontalement (4 colonnes + dropdown de presence), les boutons d'actions de section (Send email / Export) restaient sur la meme ligne que le titre h3 et tronquaient, les inputs des accordions de gestion liste d'attente avaient des largeurs fixes (`style="width:6em"`, `style="width:12em"`) qui debordaient, et les boutons d'action de modale (Confirmer / Annuler) restaient cote-a-cote au lieu de prendre toute la largeur. Page d'edition de seance (`session_edit.html.twig`) : la rangee `<div class="fields">` (sans compteur) ne s'empilait pas non plus en mobile.
+
+- Fix template `session_show.html.twig` :
+  - Tableau des inscrits convertit en card-layout responsive : ajout de la classe `courses-responsive-table` + attributs `data-label` sur chaque `<td>`. Cellule du dropdown taggee `courses-attendance-cell` pour styling specifique. Suppression du wrapper `courses-table-scroll` (plus utile, on n'a plus de scroll horizontal).
+  - Inputs des 3 accordions waitlist : `style="width:6em"` / `style="width:12em"` -> classes `courses-input-narrow` / `courses-input-medium` (memes valeurs en desktop, 100% en mobile).
+  - Bouton "Edit session" : `style="padding:.5em 0"` -> classe `courses-segment-tight`.
+  - Header "Registered members" : div d'actions inline-styled -> classe `courses-section-actions`.
+  - Divider apres header : `style="margin-top:0"` -> classe `courses-divider-top0`.
+
+- Fix template `session_edit.html.twig` :
+  - `<div class="fields">` (3 inputs date/heure/heure) -> `<div class="three fields">` pour beneficier de la regle d'empilement mobile existante (`.ui.form .three.fields { flex-direction: column; }`).
+  - `style="width: 8em"` sur `max_capacity` -> classe `courses-input-narrow`.
+
+- Nouvelles classes CSS utilitaires (`webroot/galette_courses.css`) :
+  - `.courses-section-actions`, `.courses-segment-tight`, `.courses-divider-top0`, `.courses-input-narrow`, `.courses-input-medium`.
+
+- Nouvelles regles mobiles (`@media ≤767px`) :
+  - `.courses-section-header` passe en `flex-direction: column; align-items: stretch` ; `.courses-section-actions` prend toute la largeur, ses boutons s'etalent equitablement (`flex: 1`).
+  - Inputs `.courses-input-narrow` / `.courses-input-medium` -> `width: 100%`.
+  - Cellule `.courses-attendance-cell` du tableau responsive : le `<select>` Fomantic prend `width: 100%; min-height: 44px` (touch target standard) et `flex-wrap: wrap` pour que le label `data-label` passe au-dessus du dropdown si necessaire.
+  - Modales : `.ui.modal > .actions` passe en `flex-direction: column; gap: .4em` ; tous les boutons et formulaires inline a l'interieur prennent `width: 100%`.
+
 ### Phase 24 - Alignement horizontal des boutons d'action sur PC
 
 **Statut : TERMINEE**

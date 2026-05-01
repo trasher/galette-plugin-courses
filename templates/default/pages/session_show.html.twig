@@ -25,7 +25,7 @@
 
     {# --- Edit button (staff only, session not cancelled and future) --- #}
     {% if (login.isAdmin() or login.isStaff()) and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
-    <div class="ui basic right aligned segment" style="padding:.5em 0">
+    <div class="ui basic right aligned segment courses-segment-tight">
         <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}" class="ui small labeled icon button">
             <i class="edit icon" aria-hidden="true"></i>
             {{ _T("Edit session", "courses") }}
@@ -400,7 +400,7 @@
                                         <label>{{ _T("New max capacity", "courses") }}</label>
                                         <input type="number" name="max_capacity"
                                             min="{{ session.getCurrentRegistrations() > 0 ? session.getCurrentRegistrations() : 1 }}"
-                                            value="{{ session.getMaxCapacity() }}" style="width:6em">
+                                            value="{{ session.getMaxCapacity() }}" class="courses-input-narrow">
                                     </div>
                                     <div class="field">
                                         <button type="submit" class="ui small teal labeled icon button">
@@ -440,7 +440,7 @@
                                 <div class="inline fields">
                                     <div class="required field">
                                         <label>{{ _T("Date of new session", "courses") }}</label>
-                                        <input type="date" name="new_date" required style="width:12em">
+                                        <input type="date" name="new_date" required class="courses-input-medium">
                                     </div>
                                     <div class="field">
                                         <button type="submit" class="ui small teal labeled icon button">
@@ -504,7 +504,7 @@
                             <i class="users icon" aria-hidden="true"></i>
                             {{ _T("Registered members", "courses") }} ({{ registrations|length }})
                         </h3>
-                        <div style="display:flex;gap:.4em;flex-wrap:wrap;align-items:center">
+                        <div class="courses-section-actions">
                             <a href="{{ url_for('coursesMailSession', {'id': session.getId()}) }}"
                                class="ui tiny labeled icon button"
                                title="{{ _T("Send email via Galette mailing", "courses") }}">
@@ -520,12 +520,11 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="ui divider" style="margin-top:0"></div>
+                    <div class="ui divider courses-divider-top0"></div>
 
                     {% if can_mark_attendance %}
                         <form action="{{ url_for("coursesDoMarkAttendance", {"id": session.getId()}) }}" method="post" class="ui form">
-                            <div class="courses-table-scroll">
-                            <table class="ui compact table">
+                            <table class="ui compact table courses-responsive-table">
                                 <thead>
                                     <tr>
                                         <th>{{ _T("Member", "courses") }}</th>
@@ -537,7 +536,7 @@
                                 <tbody>
                                     {% for reg in registrations %}
                                         <tr>
-                                            <td>
+                                            <td data-label="{{ _T("Member", "courses") }}">
                                                 {% if members[reg.getMemberId()] is defined %}
                                                     <a href="{{ url_for("member", {"id": reg.getMemberId()}) }}">
                                                         {{ members[reg.getMemberId()] }}
@@ -546,7 +545,7 @@
                                                     {{ _T("Unknown member", "courses") }}
                                                 {% endif %}
                                             </td>
-                                            <td>
+                                            <td data-label="{{ _T("Nickname", "courses") }}">
                                                 {% if nicknames[reg.getMemberId()] is defined %}
                                                     <span class="ui teal mini label">
                                                         <i class="tag icon" aria-hidden="true"></i>
@@ -554,8 +553,8 @@
                                                     </span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
-                                            <td>
+                                            <td data-label="{{ _T("Registration date", "courses") }}">{{ reg.getRegistrationDate()|date("d/m/Y") }}</td>
+                                            <td data-label="{{ _T("Attendance", "courses") }}" class="courses-attendance-cell">
                                                 <select name="attendance[{{ reg.getId() }}]" class="ui compact dropdown">
                                                     <option value="registered"{% if reg.getStatus() == 'registered' %} selected{% endif %}>{{ _T("Registered", "courses") }}</option>
                                                     <option value="attended"{% if reg.getStatus() == 'attended' %} selected{% endif %}>{{ _T("Attended", "courses") }}</option>
@@ -570,7 +569,6 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
-                            </div>
                             <div class="ui basic segment courses-save-right">
                                 <button type="submit" class="ui small primary labeled icon button">
                                     <i class="check icon" aria-hidden="true"></i>

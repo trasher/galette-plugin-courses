@@ -18,7 +18,7 @@
             {{ _T("Planning", "courses") }}
         </h4>
 
-        <div class="fields">
+        <div class="three fields">
             <div class="required field">
                 <label for="session_date">{{ _T("Date", "courses") }}</label>
                 <input type="date" name="session_date" id="session_date"
@@ -47,7 +47,7 @@
                     value="{{ session.getMaxCapacity() ?? '' }}"
                     min="{{ session.getMaxCapacity() ?? session.getCurrentRegistrations() }}"
                     placeholder="{{ _T("Unlimited", "courses") }}"
-                    style="width: 8em">
+                    class="courses-input-narrow">
             </div>
             {% if session.getMaxCapacity() %}
             <p class="ui small grey text">

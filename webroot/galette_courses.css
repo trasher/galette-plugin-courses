@@ -21,6 +21,11 @@
 .courses-cards-grid .courses-card { flex: 1 !important; }
 .courses-results-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4em; margin-bottom: .6em; }
 .courses-section-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5em; }
+.courses-section-actions { display: flex; gap: .4em; flex-wrap: wrap; align-items: center; }
+.courses-segment-tight { padding: .5em 0 !important; }
+.courses-divider-top0 { margin-top: 0 !important; }
+.courses-input-narrow { width: 6em; }
+.courses-input-medium { width: 12em; }
 .courses-member-inline { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; }
 .courses-unregister-row { display: flex; align-items: center; gap: .8em; flex-wrap: wrap; justify-content: center; }
 .courses-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -346,6 +351,34 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .mailtpl-actions .button,
     .courses-save-right .button { width: 100% !important; }
     .courses-save-right { text-align: center !important; }
+
+    /* --- Section header: stack title above action buttons --- */
+    .courses-section-header { flex-direction: column; align-items: stretch !important; }
+    .courses-section-header .ui.header { margin-bottom: 0; }
+    .courses-section-actions { width: 100%; }
+    .courses-section-actions .ui.button { flex: 1; min-width: 0; }
+
+    /* --- Fixed-width inputs become fluid --- */
+    .courses-input-narrow,
+    .courses-input-medium { width: 100% !important; }
+
+    /* --- Attendance dropdown inside responsive table card --- */
+    .courses-responsive-table tbody td.courses-attendance-cell {
+        flex-wrap: wrap;
+    }
+    .courses-responsive-table tbody td.courses-attendance-cell .ui.dropdown {
+        width: 100% !important; min-height: 44px;
+    }
+    .courses-responsive-table tbody td.courses-attendance-cell .ui.dropdown .text {
+        line-height: 1.4 !important;
+    }
+
+    /* --- Modal action buttons stack full-width --- */
+    .ui.modal > .actions { display: flex !important; flex-direction: column; gap: .4em; }
+    .ui.modal > .actions .button,
+    .ui.modal > .actions form,
+    .ui.modal > .actions .courses-inline-form { width: 100% !important; margin: 0 !important; }
+    .ui.modal > .actions form .button { width: 100% !important; }
 }
 
 /* =========================================================
