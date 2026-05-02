@@ -42,11 +42,7 @@
 {% for s in available_sessions %}
     {% set _sid = s.getId() %}
     {% set _already = _sid in registered_session_ids %}
-    {% set _no_action_left =
-       (not browse_can_self_register[_sid]) and
-       (not browse_on_waitlist[_sid]) and
-       (browse_eligible_children[_sid] is not defined or browse_eligible_children[_sid] | length == 0)
-    %}
+    {% set _no_action_left = not browse_can_self_register[_sid] and not browse_on_waitlist[_sid] and (browse_eligible_children[_sid] is not defined or browse_eligible_children[_sid]|length == 0) %}
     {% if not _already and not _no_action_left %}
         {% set browse_count = browse_count + 1 %}
     {% endif %}
