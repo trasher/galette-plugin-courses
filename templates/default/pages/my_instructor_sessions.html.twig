@@ -444,7 +444,6 @@
 <script>
 $(function() {
     $('.ui.progress').progress();
-    $('.ui.dropdown').dropdown();
 
     // ----- Tabs -----
     $('#my-instructor-tabs .item').on('click', function() {
@@ -509,27 +508,36 @@ $(function() {
         }
     }
 
-    $('#instr_browse_type_filter').on('change', function() {
-        var typeId = $(this).val();
-        $('#instr_browse_name_filter option').each(function() {
+    function cascadeInstrNameOptions() {
+        var typeId = $('#instr_browse_type_filter').val();
+        var $name = $('#instr_browse_name_filter');
+        $name.find('option').each(function() {
             var $opt = $(this);
             if ($opt.val() === '') { return; }
-            $opt.toggle(!typeId || $opt.data('type-id').toString() === typeId);
+            var matches = !typeId || $opt.data('type-id').toString() === typeId;
+            $opt.prop('disabled', !matches);
         });
-        var $selName = $('#instr_browse_name_filter');
-        var curName = $selName.val();
-        if (curName && (!typeId || $('#instr_browse_name_filter option[value="' + curName + '"]:visible').length === 0)) {
-            $selName.val('').trigger('change.select2');
+        $name.dropdown('refresh');
+        var curName = $name.val();
+        if (curName) {
+            var $curOpt = $name.find('option[value="' + curName + '"]');
+            if ($curOpt.prop('disabled')) {
+                $name.dropdown('clear');
+            }
         }
+    }
+
+    $('#instr_browse_type_filter').on('change', function() {
+        cascadeInstrNameOptions();
         applyInstrBrowseFilters();
     });
     $('#instr_browse_name_filter').on('change', applyInstrBrowseFilters);
     $('#instr_browse_date_from').on('change', applyInstrBrowseFilters);
 
     $('#instr_browse_clear_filter').on('click', function() {
-        $('#instr_browse_type_filter').val('').trigger('change.select2');
-        $('#instr_browse_name_filter option').show();
-        $('#instr_browse_name_filter').val('').trigger('change.select2');
+        $('#instr_browse_type_filter').dropdown('clear');
+        $('#instr_browse_name_filter').find('option').prop('disabled', false);
+        $('#instr_browse_name_filter').dropdown('refresh').dropdown('clear');
         $('#instr_browse_date_from').val($today);
         applyInstrBrowseFilters();
     });
