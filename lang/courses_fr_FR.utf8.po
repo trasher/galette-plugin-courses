@@ -139,6 +139,12 @@ msgstr "Mes séances comme moniteur"
 msgid "You are not assigned as instructor for any session."
 msgstr "Vous n'êtes affecté comme moniteur à aucune séance."
 
+msgid "To become instructor for a session, please ask the staff to assign you."
+msgstr "Pour devenir moniteur d'une séance, veuillez demander au staff de vous y affecter."
+
+msgid "No session available for you to volunteer as instructor."
+msgstr "Aucune séance disponible pour laquelle vous porter volontaire comme moniteur."
+
 msgid "Find a session"
 msgstr "Trouver une séance"
 

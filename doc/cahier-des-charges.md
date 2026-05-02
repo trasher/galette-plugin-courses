@@ -631,6 +631,29 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 30 - Page "Mes seances comme moniteur" en deux onglets (Trouver / Mes seances)
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : organiser la page comme "Mes inscriptions" avec deux onglets — *Trouver une seance* (pour devenir moniteur) et *Mes seances comme moniteur* (contenu actuel).
+
+- Fix `SessionsController::doVolunteerInstructor` : la verification d'eligibilite ne s'appuyait que sur `getManagedGroups()`. Pour permettre aux admin/staff de s'auto-affecter via ce flux (utilise par le nouvel onglet Find), on ajoute une branche d'eligibilite `isAdmin() || isStaff() => $canVolunteer = true` avant la verification des groupes geres. Comportement inchange pour les responsables de groupe.
+
+- Extension `SessionsController::myInstructorSessions` : chargement des donnees du nouvel onglet *Trouver* :
+  - `$volunteer_sessions` calcule par `Sessions::getList()` avec filtres `date_from = today` + `status_filter = open`.
+  - Filtrage en PHP : exclusion des seances ou l'utilisateur est deja moniteur (intersection avec son `session_ids`), exclusion des seances qui ont deja un moniteur (batch via `SessionInstructor::getInstructorNamesForSessions()`), check d'eligibilite (admin/staff = always true ; group manager = au moins un groupe d'evenement gere ou aucune restriction).
+  - Variables passees au template : `volunteer_sessions`, `volunteer_events`, `volunteer_event_types` (dropdown filtre type), `volunteer_available_names` (dropdown filtre activite), `can_volunteer` (booleen).
+  - Pour les regular members affectes comme moniteur, `can_volunteer = false` -> message d'info dans l'onglet ("Pour devenir moniteur, veuillez demander au staff").
+
+- Refonte template `my_instructor_sessions.html.twig` :
+  - Onglets `#my-instructor-tabs` calques sur `#my-sessions-tabs` (icones `search` + `chalkboard teacher`, badges teal/green, persistance via `localStorage`).
+  - Onglet *Trouver* : 3 filtres dynamiques (type / activite / date) avec cascade `type -> activite`, message vide ou liste de cards (badge orange "No instructor", bouton teal "Volunteer as instructor" + lien Details). Badge `instructor-browse-badge` mis a jour live par `applyInstrBrowseFilters()`.
+  - Onglet *Mes seances comme moniteur* : contenu identique a la phase 28 (Prochaine / A venir / Annulees / Passees repliable). Bouton "Find a session" dans le placeholder vide pour rediriger vers l'autre onglet.
+
+- Nouvelles chaines i18n (`lang/courses_fr_FR.utf8.po` + `.mo` recompile a 498 entrees) :
+  - "To become instructor for a session, please ask the staff to assign you." -> "Pour devenir moniteur d'une séance, veuillez demander au staff de vous y affecter."
+  - "No session available for you to volunteer as instructor." -> "Aucune séance disponible pour laquelle vous porter volontaire comme moniteur."
+
 ### Phase 29 - Correction badge "Trouver une seance" (compteur erroné)
 
 **Statut : TERMINEE**

@@ -34,36 +34,97 @@
     {% endfor %}
 {% endif %}
 
-{% if sessions|length == 0 %}
-    <div class="ui placeholder segment">
-        <div class="ui icon header">
-            <i class="chalkboard teacher icon" aria-hidden="true"></i>
-            {{ _T("You are not assigned as instructor for any session.", "courses") }}
-        </div>
-    </div>
-{% else %}
+{# =========================================================
+   Onglets
+   ========================================================= #}
+<div class="ui top attached tabular menu" id="my-instructor-tabs">
+    <a class="item active" data-tab="browse">
+        <i class="search icon" aria-hidden="true"></i>
+        <span class="courses-tab-text">{{ _T("Find a session", "courses") }}</span>
+        <span id="instructor-browse-badge" class="ui teal circular label" style="margin-left:.4em;{% if volunteer_sessions|length == 0 %}display:none;{% endif %}">{{ volunteer_sessions|length }}</span>
+    </a>
+    <a class="item" data-tab="mine">
+        <i class="chalkboard teacher icon" aria-hidden="true"></i>
+        <span class="courses-tab-text">{{ _T("My instructor sessions", "courses") }}</span>
+        {% if upcoming_active|length > 0 %}
+            <span class="ui green circular label" style="margin-left:.4em">{{ upcoming_active|length }}</span>
+        {% endif %}
+    </a>
+</div>
 
-    {# =========================================================
-       Prochaine séance (toutes celles à la date la plus proche)
-       ========================================================= #}
-    {% if next_group|length > 0 %}
-        <h3 class="ui header courses-section-mt-sm">
-            <i class="star icon" aria-hidden="true"></i>
-            {{ _T("Your next session", "courses") }}
-        </h3>
-        <div class="ui stackable three column grid courses-cards-grid">
-            {% for sid in next_group %}
-                {% set s = sessions[sid] %}
-                {% set ev = events[s.getEventId()] %}
-                <div class="column">
-                    <div class="ui fluid card courses-card courses-next-session">
+{# =========================================================
+   ONGLET 1 — Trouver une seance pour devenir moniteur
+   ========================================================= #}
+<div class="ui bottom attached tab segment active" data-tab="browse" style="padding:1em 0; border:none; box-shadow:none;">
+
+    {% if not can_volunteer %}
+        <div class="ui info message">
+            <i class="info circle icon" aria-hidden="true"></i>
+            {{ _T("To become instructor for a session, please ask the staff to assign you.", "courses") }}
+        </div>
+    {% elseif volunteer_sessions|length == 0 %}
+        <div class="ui info message">
+            <i class="calendar outline icon" aria-hidden="true"></i>
+            {{ _T("No session available for you to volunteer as instructor.", "courses") }}
+        </div>
+    {% else %}
+        {# Filtres dynamiques (JS, sans rechargement) #}
+        <div class="ui secondary yellow segment courses-browse-filters" style="margin-bottom:1em;">
+            <div class="ui form">
+                <div class="three fields" style="margin-bottom:.5em;">
+                    <div class="field">
+                        <label for="instr_browse_type_filter">{{ _T("Type", "courses") }}</label>
+                        <select id="instr_browse_type_filter" class="ui search dropdown">
+                            <option value="">{{ _T("All types", "courses") }}</option>
+                            {% for type in volunteer_event_types %}
+                                <option value="{{ type.getId() }}">{{ type.getLabel() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="instr_browse_name_filter">{{ _T("Activity", "courses") }}</label>
+                        <select id="instr_browse_name_filter" class="ui search dropdown">
+                            <option value="">{{ _T("All activities", "courses") }}</option>
+                            {% for item in volunteer_available_names %}
+                                <option value="{{ item.name }}" data-type-id="{{ item.type_id }}">{{ item.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="instr_browse_date_from">{{ _T("From", "courses") }}</label>
+                        <input type="date" id="instr_browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="instr_browse_clear_filter" class="ui small labeled icon button">
+                        <i class="trash alt red icon" aria-hidden="true"></i>
+                        {{ _T("Clear filter", "courses") }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="instr-browse-no-results" class="ui info message" style="display:none;">
+            <i class="search icon" aria-hidden="true"></i>
+            {{ _T("No session matches your filters.", "courses") }}
+        </div>
+
+        <div class="ui stackable three column grid courses-cards-grid" id="instr-browse-cards-grid">
+            {% for sid, s in volunteer_sessions %}
+                {% set ev = volunteer_events[s.getEventId()] %}
+                <div class="column courses-browse-card-col"
+                     data-type-id="{{ ev.getTypeId() }}"
+                     data-event-name="{{ ev.getName() }}"
+                     data-date="{{ s.getSessionDate() }}">
+                    <div class="ui fluid card courses-card">
                         <div class="content">
                             <div class="right floated meta">
-                                <span class="ui green label">{{ s.getStatusLabel() }}</span>
+                                <span class="ui orange label">
+                                    <i class="exclamation triangle icon" aria-hidden="true"></i>
+                                    {{ _T("No instructor", "courses") }}
+                                </span>
                             </div>
-                            <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
-                                {{ ev.getName() }}
-                            </a>
+                            <div class="header">{{ ev.getName() }}</div>
                             <div class="meta">
                                 <i class="calendar icon" aria-hidden="true"></i>
                                 <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
@@ -77,55 +138,65 @@
                                     {{ ev.getLocation() }}
                                 </div>
                             {% endif %}
-                            {% if instructor_names[sid] is defined %}
-                                <div class="meta">
-                                    <i class="chalkboard teacher icon" aria-hidden="true"></i>
-                                    {{ instructor_names[sid] }}
-                                </div>
-                            {% endif %}
-                            {% if s.getMaxCapacity() %}
-                                <div class="ui tiny progress courses-section-mt-sm{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                        </div>
+                        {% if s.getMaxCapacity() %}
+                            <div class="content">
+                                <div class="ui tiny progress{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
                                     <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
                                     <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
                                 </div>
-                            {% else %}
-                                <div class="meta">
-                                    <i class="users icon" aria-hidden="true"></i>
-                                    {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
-                                </div>
-                            {% endif %}
-                        </div>
+                            </div>
+                        {% endif %}
                         <div class="extra content">
-                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui small primary button">
-                                <i class="eye icon" aria-hidden="true"></i>
+                            <form action="{{ url_for("coursesDoVolunteerInstructor", {"id": sid}) }}" method="post" class="ui form courses-inline-form">
+                                <button type="submit" class="ui tiny labeled icon teal button">
+                                    <i class="hand paper icon" aria-hidden="true"></i>
+                                    {{ _T("Volunteer as instructor", "courses") }}
+                                </button>
+                                {% include "components/forms/csrf.html.twig" %}
+                            </form>
+                            <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui tiny basic button">
                                 {{ _T("Details", "courses") }}
                             </a>
-                            <a href="{{ url_for("coursesSessionIcal", {"id": sid}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
-                                <i class="calendar download icon" aria-hidden="true"></i>
-                            </a>
-                            {% if can_export %}
-                                <a href="{{ url_for("coursesSessionExportRegistrations", {"id": sid}) }}" class="ui mini icon button" title="{{ _T("Export to CSV (Excel)", "courses") }}">
-                                    <i class="file excel icon" aria-hidden="true"></i>
-                                </a>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
+    {% endif %}
+</div>
 
-        {# Autres séances à venir #}
-        {% if rest_group|length > 0 %}
-            <h3 class="ui header courses-section-mt">
-                <i class="clock icon" aria-hidden="true"></i>
-                {{ _T("Upcoming", "courses") }}
+{# =========================================================
+   ONGLET 2 — Mes seances comme moniteur
+   ========================================================= #}
+<div class="ui bottom attached tab segment" data-tab="mine" style="padding:1em 0; border:none; box-shadow:none;">
+
+    {% if sessions|length == 0 %}
+        <div class="ui placeholder segment">
+            <div class="ui icon header">
+                <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                {{ _T("You are not assigned as instructor for any session.", "courses") }}
+            </div>
+            {% if can_volunteer %}
+                <button class="ui small primary button" id="instr-go-browse-btn">
+                    {{ _T("Find a session", "courses") }}
+                </button>
+            {% endif %}
+        </div>
+    {% else %}
+
+        {# --- Prochaine seance --- #}
+        {% if next_group|length > 0 %}
+            <h3 class="ui header courses-section-mt-sm">
+                <i class="star icon" aria-hidden="true"></i>
+                {{ _T("Your next session", "courses") }}
             </h3>
             <div class="ui stackable three column grid courses-cards-grid">
-                {% for sid in rest_group %}
+                {% for sid in next_group %}
                     {% set s = sessions[sid] %}
                     {% set ev = events[s.getEventId()] %}
                     <div class="column">
-                        <div class="ui fluid card courses-card">
+                        <div class="ui fluid card courses-card courses-next-session">
                             <div class="content">
                                 <div class="right floated meta">
                                     <span class="ui green label">{{ s.getStatusLabel() }}</span>
@@ -182,124 +253,190 @@
                     </div>
                 {% endfor %}
             </div>
-        {% endif %}
-    {% else %}
-        <div class="ui info message">
-            <i class="info circle icon" aria-hidden="true"></i>
-            {{ _T("No upcoming session", "courses") }}
-        </div>
-    {% endif %}
 
-    {# =========================================================
-       Annulées (futures)
-       ========================================================= #}
-    {% if upcoming_cancelled|length > 0 %}
-        <div class="ui red segment courses-section-mt">
-            <h3 class="ui red header">
-                <i class="ban icon" aria-hidden="true"></i>
-                {{ _T("Cancelled sessions", "courses") }}
-                <span class="ui red circular label">{{ upcoming_cancelled|length }}</span>
-            </h3>
-            <div class="ui stackable three column grid courses-cards-grid">
-                {% for sid in upcoming_cancelled %}
-                    {% set s = sessions[sid] %}
-                    {% set ev = events[s.getEventId()] %}
-                    <div class="column">
-                        <div class="ui fluid card courses-card courses-card-cancelled">
-                            <div class="content">
-                                <div class="right floated meta">
-                                    <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
-                                </div>
-                                <div class="header">{{ ev.getName() }}</div>
-                                <div class="meta">
-                                    <i class="calendar icon" aria-hidden="true"></i>
-                                    <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
-                                    <span class="courses-date-month">{{ s.getMonthYear() }}</span>
-                                    &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
-                                </div>
-                                {% if ev.getLocation() %}
+            {# --- Autres seances a venir --- #}
+            {% if rest_group|length > 0 %}
+                <h3 class="ui header courses-section-mt">
+                    <i class="clock icon" aria-hidden="true"></i>
+                    {{ _T("Upcoming", "courses") }}
+                </h3>
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for sid in rest_group %}
+                        {% set s = sessions[sid] %}
+                        {% set ev = events[s.getEventId()] %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card">
+                                <div class="content">
+                                    <div class="right floated meta">
+                                        <span class="ui green label">{{ s.getStatusLabel() }}</span>
+                                    </div>
+                                    <a class="header" href="{{ url_for("coursesEventShow", {"id": ev.getId()}) }}">
+                                        {{ ev.getName() }}
+                                    </a>
                                     <div class="meta">
-                                        <i class="map pin icon" aria-hidden="true"></i>
-                                        {{ ev.getLocation() }}
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
                                     </div>
-                                {% endif %}
-                                {% if s.getCancellationReason() %}
-                                    <div class="courses-cancel-detail">
-                                        <strong>{{ _T("Reason:", "courses") }}</strong>
-                                        {{ s.getCancellationReasonLabel() }}
-                                    </div>
-                                {% endif %}
-                                {% if s.getCancellationComment() %}
-                                    <div class="courses-cancel-detail">
-                                        <i class="comment outline icon" aria-hidden="true"></i>
-                                        {{ s.getCancellationComment() }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="extra content">
-                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui small primary button">
-                                    <i class="eye icon" aria-hidden="true"></i>
-                                    {{ _T("Details", "courses") }}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
-
-    {# =========================================================
-       Passées (repliable)
-       ========================================================= #}
-    {% if past|length > 0 %}
-        <div class="courses-past-toggle courses-section-mt">
-            <i class="dropdown icon" aria-hidden="true"></i>
-            {{ _T("Past sessions", "courses") }} ({{ past|length }})
-        </div>
-        <div class="courses-past-content">
-            <div class="ui stackable three column grid courses-cards-grid">
-                {% for sid in past|reverse %}
-                    {% set s = sessions[sid] %}
-                    {% set ev = events[s.getEventId()] %}
-                    <div class="column">
-                        <div class="ui fluid card courses-card courses-past{% if s.getStatus() == 'cancelled' %} courses-card-cancelled{% endif %}">
-                            <div class="content">
-                                <div class="header">{{ ev.getName() }}</div>
-                                <div class="meta">
-                                    <i class="calendar icon" aria-hidden="true"></i>
-                                    {{ s.getFormattedDate() }}
-                                    &nbsp;&middot;&nbsp;
-                                    {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    {% if ev.getLocation() %}
+                                        <div class="meta">
+                                            <i class="map pin icon" aria-hidden="true"></i>
+                                            {{ ev.getLocation() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if instructor_names[sid] is defined %}
+                                        <div class="meta">
+                                            <i class="chalkboard teacher icon" aria-hidden="true"></i>
+                                            {{ instructor_names[sid] }}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.getMaxCapacity() %}
+                                        <div class="ui tiny progress courses-section-mt-sm{% if s.isFull() %} red{% elseif s.getCapacityPercent() > 75 %} yellow{% else %} green{% endif %}" data-percent="{{ s.getCapacityPercent() }}">
+                                            <div class="bar" style="width:{{ s.getCapacityPercent() }}%"></div>
+                                            <div class="label">{{ s.getCurrentRegistrations() }} / {{ s.getMaxCapacity() }}</div>
+                                        </div>
+                                    {% else %}
+                                        <div class="meta">
+                                            <i class="users icon" aria-hidden="true"></i>
+                                            {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                <div class="meta">
-                                    <i class="users icon" aria-hidden="true"></i>
-                                    {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                <div class="extra content">
+                                    <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui small primary button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                    <a href="{{ url_for("coursesSessionIcal", {"id": sid}) }}" class="ui mini icon button" title="{{ _T("Export iCal", "courses") }}">
+                                        <i class="calendar download icon" aria-hidden="true"></i>
+                                    </a>
+                                    {% if can_export %}
+                                        <a href="{{ url_for("coursesSessionExportRegistrations", {"id": sid}) }}" class="ui mini icon button" title="{{ _T("Export to CSV (Excel)", "courses") }}">
+                                            <i class="file excel icon" aria-hidden="true"></i>
+                                        </a>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="extra content">
-                                {% if s.getStatus() == 'cancelled' %}
-                                    <span class="ui red tiny label">
-                                        <i class="ban icon" aria-hidden="true"></i>
-                                        {{ _T("Cancelled", "courses") }}
-                                    </span>
-                                {% else %}
-                                    <span class="ui label">{{ s.getStatusLabel() }}</span>
-                                {% endif %}
-                                <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui mini button">
-                                    <i class="eye icon" aria-hidden="true"></i>
-                                    {{ _T("Details", "courses") }}
-                                </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="ui info message">
+                <i class="info circle icon" aria-hidden="true"></i>
+                {{ _T("No upcoming session", "courses") }}
+            </div>
+        {% endif %}
+
+        {# --- Annulees (futures) --- #}
+        {% if upcoming_cancelled|length > 0 %}
+            <div class="ui red segment courses-section-mt">
+                <h3 class="ui red header">
+                    <i class="ban icon" aria-hidden="true"></i>
+                    {{ _T("Cancelled sessions", "courses") }}
+                    <span class="ui red circular label">{{ upcoming_cancelled|length }}</span>
+                </h3>
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for sid in upcoming_cancelled %}
+                        {% set s = sessions[sid] %}
+                        {% set ev = events[s.getEventId()] %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card courses-card-cancelled">
+                                <div class="content">
+                                    <div class="right floated meta">
+                                        <span class="ui red label">{{ _T("Cancelled", "courses") }}</span>
+                                    </div>
+                                    <div class="header">{{ ev.getName() }}</div>
+                                    <div class="meta">
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        <span class="courses-date-day">{{ s.getSessionDate()|date("d") }}</span>
+                                        <span class="courses-date-month">{{ s.getMonthYear() }}</span>
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    </div>
+                                    {% if ev.getLocation() %}
+                                        <div class="meta">
+                                            <i class="map pin icon" aria-hidden="true"></i>
+                                            {{ ev.getLocation() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.getCancellationReason() %}
+                                        <div class="courses-cancel-detail">
+                                            <strong>{{ _T("Reason:", "courses") }}</strong>
+                                            {{ s.getCancellationReasonLabel() }}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.getCancellationComment() %}
+                                        <div class="courses-cancel-detail">
+                                            <i class="comment outline icon" aria-hidden="true"></i>
+                                            {{ s.getCancellationComment() }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="extra content">
+                                    <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui small primary button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
 
-{% endif %}
+        {# --- Passees (repliable) --- #}
+        {% if past|length > 0 %}
+            <div class="courses-past-toggle courses-section-mt">
+                <i class="dropdown icon" aria-hidden="true"></i>
+                {{ _T("Past sessions", "courses") }} ({{ past|length }})
+            </div>
+            <div class="courses-past-content">
+                <div class="ui stackable three column grid courses-cards-grid">
+                    {% for sid in past|reverse %}
+                        {% set s = sessions[sid] %}
+                        {% set ev = events[s.getEventId()] %}
+                        <div class="column">
+                            <div class="ui fluid card courses-card courses-past{% if s.getStatus() == 'cancelled' %} courses-card-cancelled{% endif %}">
+                                <div class="content">
+                                    <div class="header">{{ ev.getName() }}</div>
+                                    <div class="meta">
+                                        <i class="calendar icon" aria-hidden="true"></i>
+                                        {{ s.getFormattedDate() }}
+                                        &nbsp;&middot;&nbsp;
+                                        {{ s.getFormattedStartTime() }} - {{ s.getFormattedEndTime() }}
+                                    </div>
+                                    <div class="meta">
+                                        <i class="users icon" aria-hidden="true"></i>
+                                        {{ s.getCurrentRegistrations() }} {{ _T("registered", "courses") }}
+                                    </div>
+                                </div>
+                                <div class="extra content">
+                                    {% if s.getStatus() == 'cancelled' %}
+                                        <span class="ui red tiny label">
+                                            <i class="ban icon" aria-hidden="true"></i>
+                                            {{ _T("Cancelled", "courses") }}
+                                        </span>
+                                    {% else %}
+                                        <span class="ui label">{{ s.getStatusLabel() }}</span>
+                                    {% endif %}
+                                    <a href="{{ url_for("coursesSessionShow", {"id": sid}) }}" class="ui mini button">
+                                        <i class="eye icon" aria-hidden="true"></i>
+                                        {{ _T("Details", "courses") }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+    {% endif %}
+</div>
 
 {% endblock %}
 
@@ -307,13 +444,99 @@
 <script>
 $(function() {
     $('.ui.progress').progress();
+    $('.ui.dropdown').dropdown();
 
-    // Past sessions collapsible
+    // ----- Tabs -----
+    $('#my-instructor-tabs .item').on('click', function() {
+        var tab = $(this).data('tab');
+        $('#my-instructor-tabs .item').removeClass('active');
+        $(this).addClass('active');
+        $('.ui.bottom.attached.tab').removeClass('active');
+        $('.ui.bottom.attached.tab[data-tab="' + tab + '"]').addClass('active');
+        localStorage.setItem('my_instructor_tab', tab);
+        if (tab === 'browse') {
+            applyInstrBrowseFilters();
+            $('.ui.progress:visible').progress();
+        }
+    });
+
+    var savedTab = localStorage.getItem('my_instructor_tab') || 'browse';
+    if (savedTab !== 'browse') {
+        $('#my-instructor-tabs .item[data-tab="' + savedTab + '"]').trigger('click');
+    }
+
+    $('#instr-go-browse-btn').on('click', function() {
+        $('#my-instructor-tabs .item[data-tab="browse"]').trigger('click');
+    });
+
+    // ----- Past sessions collapsible -----
     $('.courses-past-content').hide();
     $('.courses-past-toggle').on('click', function() {
         $(this).next('.courses-past-content').slideToggle(200);
         $(this).find('.dropdown.icon').toggleClass('rotated');
     });
+
+    // ----- Browse filters (client-side) -----
+    var $today = $('#instr_browse_date_from').val();
+
+    function applyInstrBrowseFilters() {
+        if (!$('#instr-browse-cards-grid').length) { return; }
+        var typeId = $('#instr_browse_type_filter').val();
+        var name = $('#instr_browse_name_filter').val();
+        var dateFrom = $('#instr_browse_date_from').val();
+        var visible = 0;
+
+        $('#instr-browse-cards-grid .courses-browse-card-col').each(function() {
+            var $col = $(this);
+            var cType = $col.data('type-id').toString();
+            var cName = $col.data('event-name');
+            var cDate = $col.data('date');
+
+            var show = true;
+            if (typeId  && cType !== typeId)        show = false;
+            if (name    && cName !== name)           show = false;
+            if (dateFrom && cDate < dateFrom)        show = false;
+
+            $col.toggle(show);
+            if (show) visible++;
+        });
+
+        $('#instr-browse-no-results').toggle(visible === 0);
+        var $badge = $('#instructor-browse-badge');
+        if ($badge.length) {
+            $badge.text(visible);
+            $badge.toggle(visible > 0);
+        }
+    }
+
+    $('#instr_browse_type_filter').on('change', function() {
+        var typeId = $(this).val();
+        $('#instr_browse_name_filter option').each(function() {
+            var $opt = $(this);
+            if ($opt.val() === '') { return; }
+            $opt.toggle(!typeId || $opt.data('type-id').toString() === typeId);
+        });
+        var $selName = $('#instr_browse_name_filter');
+        var curName = $selName.val();
+        if (curName && (!typeId || $('#instr_browse_name_filter option[value="' + curName + '"]:visible').length === 0)) {
+            $selName.val('').trigger('change.select2');
+        }
+        applyInstrBrowseFilters();
+    });
+    $('#instr_browse_name_filter').on('change', applyInstrBrowseFilters);
+    $('#instr_browse_date_from').on('change', applyInstrBrowseFilters);
+
+    $('#instr_browse_clear_filter').on('click', function() {
+        $('#instr_browse_type_filter').val('').trigger('change.select2');
+        $('#instr_browse_name_filter option').show();
+        $('#instr_browse_name_filter').val('').trigger('change.select2');
+        $('#instr_browse_date_from').val($today);
+        applyInstrBrowseFilters();
+    });
+
+    if (savedTab === 'browse') {
+        applyInstrBrowseFilters();
+    }
 });
 </script>
 {% endblock %}

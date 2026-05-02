@@ -559,15 +559,18 @@ class SessionsController extends AbstractPluginController
             return $response->withStatus(302)->withHeader("Location", $this->routeparser->urlFor("coursesSessions"));
         }
 
-        // Verify the group manager manages one of the event's groups
+        // Eligibility: admin/staff can self-assign for any session.
+        // Group managers must manage one of the event's groups (or no group restriction).
         $event = $session->getEvent();
         $event->loadGroups();
         $eventGroups = $event->getGroups();
-        $managed = $this->login->getManagedGroups();
         $canVolunteer = false;
-        if (empty($eventGroups)) {
+        if ($this->login->isAdmin() || $this->login->isStaff()) {
+            $canVolunteer = true;
+        } elseif (empty($eventGroups)) {
             $canVolunteer = true; // no group restriction
         } else {
+            $managed = $this->login->getManagedGroups();
             foreach ($eventGroups as $gid) {
                 if (in_array($gid, $managed)) {
                     $canVolunteer = true;
@@ -1367,9 +1370,12 @@ class SessionsController extends AbstractPluginController
     }
 
     /**
-     * Page "Mes seances comme moniteur" — lists all sessions where the
-     * current member is registered as instructor (split next / upcoming /
-     * cancelled / past), similar to the "My registrations" page.
+     * Page "Mes seances comme moniteur" — two tabs:
+     *  1. "Find a session" : sessions where the user can become instructor
+     *     (admin/staff = all, group managers = events with at least one
+     *     managed group or no group restriction; regular members = none).
+     *  2. "My instructor sessions" : sessions where the user is already
+     *     instructor, split next / upcoming / cancelled / past.
      */
     public function myInstructorSessions(Request $request, Response $response): Response
     {
@@ -1380,6 +1386,9 @@ class SessionsController extends AbstractPluginController
                 ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
         }
 
+        // ============================================================
+        // Tab 2 : sessions where I'm already instructor
+        // ============================================================
         $session_ids = SessionInstructor::getSessionIdsForMember($this->zdb, $member_id);
 
         $sessions = [];
@@ -1396,7 +1405,6 @@ class SessionsController extends AbstractPluginController
             }
         }
 
-        // Chronological order (ascending date + start time)
         uasort($sessions, static function (Session $a, Session $b): int {
             return strcmp(
                 $a->getSessionDate() . $a->getStartTime(),
@@ -1409,18 +1417,124 @@ class SessionsController extends AbstractPluginController
             array_keys($sessions)
         );
 
+        // ============================================================
+        // Tab 1 : sessions I could become instructor for ("Find")
+        // ============================================================
+        $is_admin_or_staff = $this->login->isAdmin() || $this->login->isStaff();
+        $is_group_manager  = $this->login->isGroupManager();
+        $can_volunteer     = $is_admin_or_staff || $is_group_manager;
+
+        $volunteer_sessions     = [];
+        $volunteer_events       = [];
+        $volunteer_event_types  = [];
+        $volunteer_available_names = [];
+
+        if ($can_volunteer) {
+            $volunteer_filters = new SessionsList();
+            $volunteer_filters->date_from = date('Y-m-d');
+            $volunteer_filters->status_filter = Session::STATUS_OPEN;
+            $volunteer_repo = new Sessions($this->zdb, $this->login, $volunteer_filters);
+            $candidates = $volunteer_repo->getList();
+
+            // Batch: which candidate sessions already have at least one instructor?
+            $candidate_ids = array_keys($candidates);
+            $with_instructor_map = SessionInstructor::getInstructorNamesForSessions(
+                $this->zdb,
+                $candidate_ids
+            );
+            $sessions_with_instructor = array_flip(array_keys($with_instructor_map));
+
+            $own_session_id_set = array_flip($session_ids);
+            $managed_groups = $this->login->getManagedGroups();
+
+            foreach ($candidates as $sid => $s) {
+                // Skip sessions I'm already instructor of (shown in Tab 2)
+                if (isset($own_session_id_set[$sid])) {
+                    continue;
+                }
+                // Skip sessions that already have an instructor
+                if (isset($sessions_with_instructor[$sid])) {
+                    continue;
+                }
+
+                $eid = $s->getEventId();
+                if (!isset($volunteer_events[$eid])) {
+                    $event = new Event($this->zdb, $eid);
+                    $event->loadGroups();
+                    $volunteer_events[$eid] = $event;
+                }
+                $event = $volunteer_events[$eid];
+
+                // Eligibility
+                $eligible = false;
+                if ($is_admin_or_staff) {
+                    $eligible = true;
+                } else {
+                    $eventGroups = $event->getGroups();
+                    if (empty($eventGroups)) {
+                        $eligible = true;
+                    } else {
+                        foreach ($eventGroups as $gid) {
+                            if (in_array($gid, $managed_groups, true)) {
+                                $eligible = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!$eligible) {
+                    continue;
+                }
+
+                $volunteer_sessions[$sid] = $s;
+            }
+
+            uasort($volunteer_sessions, static function (Session $a, Session $b): int {
+                return strcmp(
+                    $a->getSessionDate() . $a->getStartTime(),
+                    $b->getSessionDate() . $b->getStartTime()
+                );
+            });
+
+            // Drop loaded events that aren't actually shown
+            $shown_event_ids = [];
+            foreach ($volunteer_sessions as $s) {
+                $shown_event_ids[$s->getEventId()] = true;
+            }
+            $volunteer_events = array_intersect_key($volunteer_events, $shown_event_ids);
+
+            // Filter dropdowns: types + names actually present in the result set
+            $volunteer_event_types = EventType::getList($this->zdb);
+            $seen_names = [];
+            foreach ($volunteer_events as $ev) {
+                $key = $ev->getName() . '|' . $ev->getTypeId();
+                if (!isset($seen_names[$key])) {
+                    $seen_names[$key] = true;
+                    $volunteer_available_names[] = [
+                        'name'    => $ev->getName(),
+                        'type_id' => $ev->getTypeId(),
+                    ];
+                }
+            }
+        }
+
         $this->view->render(
             $response,
             $this->getTemplate('pages/my_instructor_sessions'),
             [
-                'page_title'       => _T('My instructor sessions', 'courses'),
-                'sessions'         => $sessions,
-                'events'           => $events,
-                'instructor_names' => $instructor_names,
-                'current_member_id' => $member_id,
-                'can_export'       => $this->login->isAdmin()
-                                       || $this->login->isStaff()
-                                       || $this->login->isGroupManager(),
+                'page_title'         => _T('My instructor sessions', 'courses'),
+                'sessions'           => $sessions,
+                'events'             => $events,
+                'instructor_names'   => $instructor_names,
+                'current_member_id'  => $member_id,
+                'can_export'         => $this->login->isAdmin()
+                                          || $this->login->isStaff()
+                                          || $this->login->isGroupManager(),
+                'can_volunteer'             => $can_volunteer,
+                'volunteer_sessions'        => $volunteer_sessions,
+                'volunteer_events'          => $volunteer_events,
+                'volunteer_event_types'     => $volunteer_event_types,
+                'volunteer_available_names' => $volunteer_available_names,
             ]
         );
         return $response;
