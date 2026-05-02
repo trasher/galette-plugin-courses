@@ -680,7 +680,9 @@ $(function() {
             if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
             if (fDate && cDate < fDate)                                             show = false;
 
-            $col.toggle(show);
+            // Use a class with `display: none !important` because Fomantic
+            // UI's `.ui.grid > .column` rule overrides inline display:none.
+            $col.toggleClass('courses-hidden', !show);
             if (show) visible++;
         });
 
