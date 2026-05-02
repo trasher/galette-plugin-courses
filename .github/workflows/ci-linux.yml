@@ -110,7 +110,7 @@ jobs:
       - name: Headers checks
         run: |
           cd galette-core/galette/plugins/plugin-courses
-          ../../vendor/bin/docheader --docheader=../../../.docheader check lib ./*.php
+          ../../vendor/bin/docheader --docheader=.docheader check lib ./*.php
 
 
   unit-tests:
