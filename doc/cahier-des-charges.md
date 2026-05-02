@@ -631,6 +631,32 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 31 - Filtres "Trouver une seance" : selects natifs + bouton Filtrer (fiabilite)
+
+**Statut : TERMINEE**
+
+- Probleme remonte : sur les pages *Mes inscriptions* et *Mes seances comme moniteur* (onglet *Trouver une seance*), la selection d'une valeur dans les dropdowns Type ou Activite ne filtrait pas les cartes affichees. Deux tentatives de correction precedentes (commits `0213100`, `31a19d3`) ont essaye de fiabiliser l'integration Fomantic UI (cascade des options, callback `onChange`, lecture via `dropdown('get value')`, etat local) sans succes : la synchronisation entre le widget Fomantic et la valeur du `<select>` sous-jacent restait imprevisible dans la stack du projet, et l'evenement `change` natif n'etait pas declenche de facon fiable.
+
+- Fix retenu (commit `3f2ef1b`) : abandon de Fomantic UI pour ces filtres specifiques au profit de `<select>` HTML natifs.
+  - Suppression de `class="ui search dropdown"` sur `#browse_type_filter`, `#browse_name_filter`, `#instr_browse_type_filter`, `#instr_browse_name_filter` -> remplacee par `class="courses-native-select"`.
+  - L'evenement `change` natif est universellement fiable (desktop + mobile + accessibilite), pas de timing d'init a gerer.
+  - Le JS `applyBrowseFilters()` lit directement `$('#xxx').val()` sur des selects natifs (toujours synchronisee).
+  - Lecture des attributs des cartes via `.attr('data-...')` plutot que `.data(...)` pour eviter le cache jQuery.
+  - Comparaison Activite : trim + lowercase pour tolerer les ecarts de casse / espaces.
+
+- Ajout d'un bouton **Filtrer** explicite (`#browse_apply_filter`, `#instr_browse_apply_filter`) a cote du bouton **Effacer le filtre**, sur suggestion utilisateur. Garantit le declenchement quel que soit le canal de saisie (touchscreen quirks, lecteurs d'ecran, doutes utilisateur). Les filtres restent egalement dynamiques (`change` declenche un re-filtrage immediat).
+
+- CSS `webroot/galette_courses.css` :
+  - Nouvelle classe `.courses-native-select` : style coherent avec `.ui.input` (border, padding, border-radius, focus state).
+  - Nouvelle classe `.courses-filter-actions` : flex container pour la barre de boutons (Filtrer + Effacer), boutons pleine largeur sur mobile (`max-width: 767px`).
+
+- Fichiers modifies :
+  - `templates/default/pages/my_registrations.html.twig` : selects natifs + bouton Filtrer + JS simplifie (lecture .val() directe).
+  - `templates/default/pages/my_instructor_sessions.html.twig` : meme refonte sur l'onglet *Trouver une seance*.
+  - `webroot/galette_courses.css` : classes `.courses-native-select` et `.courses-filter-actions`.
+
+- Doc utilisateur (`doc/mode-emploi.md`) : ajout du bouton **Filtrer** dans la section "Onglet Trouver une seance" et dans la description de la page "Mes seances comme moniteur".
+
 ### Phase 30 - Page "Mes seances comme moniteur" en deux onglets (Trouver / Mes seances)
 
 **Statut : TERMINEE**

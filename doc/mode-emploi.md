@@ -256,6 +256,9 @@ La page **Mes inscriptions** (`/plugins/courses/my-registrations`) comporte deux
   - La seance disparait si le membre ne peut pas s'inscrire lui-meme ET n'est pas en liste d'attente ET tous ses enfants eligibles sont deja inscrits
   - Cela garantit que les cartes restantes ont toujours une action disponible
 - Filtres JS cote client : Type, Activite (cascade), A partir du (date)
+  - Selectionner une valeur applique le filtre automatiquement
+  - Bouton **"Filtrer"** disponible pour declencher explicitement le filtre (utile en cas de doute)
+  - Bouton **"Effacer le filtre"** : reinitialise tous les filtres aux valeurs par defaut (date du jour)
 - Boutons sur chaque carte : **"S'inscrire"** (vert, si eligible en propre nom) et/ou **"Inscrire un enfant"** (teal, si un enfant est eligible)
 
 #### Onglet "Mes inscriptions"
@@ -737,7 +740,9 @@ La page **Mes inscriptions** comprend deux onglets :
 - **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe
 - **Mes inscriptions** : seances a venir, annulees et passees
 
-La page **Mes seances comme moniteur** est visible uniquement pour les membres affectes a au moins une seance comme instructeur (assignation par le staff ou auto-volontariat depuis la page de seance pour un responsable de groupe). Elle presente les seances groupees en quatre sections : *Prochaine seance*, *A venir*, *Annulees*, *Passees* (repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
+La page **Mes seances comme moniteur** est visible uniquement pour les membres affectes a au moins une seance comme instructeur (assignation par le staff ou auto-volontariat depuis la page de seance pour un responsable de groupe). Elle presente deux onglets :
+- **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions")
+- **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
 
 ### Menu "Gestion des inscriptions" (responsable de groupe, staff, admin)
 
