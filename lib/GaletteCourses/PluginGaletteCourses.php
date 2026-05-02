@@ -25,6 +25,7 @@ namespace GaletteCourses;
 
 use Galette\Core\GalettePlugin;
 use Galette\Entity\Adherent;
+use GaletteCourses\Entity\SessionInstructor;
 
 /**
  * @author Team CCAG <contact@ccag42.org>
@@ -33,7 +34,7 @@ class PluginGaletteCourses extends GalettePlugin
 {
     public static function getMenusContents(): array
     {
-        global $login;
+        global $login, $zdb;
 
         $menus = [];
 
@@ -49,6 +50,18 @@ class PluginGaletteCourses extends GalettePlugin
             'route' => ['name' => 'coursesMyRegistrations'],
             'icon'  => 'calendar check',
         ];
+
+        // Lien "Mes seances comme moniteur" : visible uniquement si le membre
+        // est moniteur d'au moins une seance (evite de polluer le menu).
+        $memberId = (int)$login->id;
+        if ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
+            $memberItems[] = [
+                'label' => _T('My instructor sessions', 'courses'),
+                'route' => ['name' => 'coursesMyInstructorSessions'],
+                'icon'  => 'chalkboard teacher',
+            ];
+        }
+
         $memberItems[] = [
             'label' => _T('My notifications', 'courses'),
             'route' => ['name' => 'coursesMemberPreferences'],
@@ -74,11 +87,6 @@ class PluginGaletteCourses extends GalettePlugin
                 'label' => _T('Sessions', 'courses'),
                 'route' => ['name' => 'coursesSessions'],
                 'icon'  => 'clock',
-            ];
-            $mgmtItems[] = [
-                'label' => _T('Add an event', 'courses'),
-                'route' => ['name' => 'coursesEventAdd'],
-                'icon'  => 'plus circle',
             ];
             $mgmtItems[] = [
                 'label' => _T('Registrations management', 'courses'),

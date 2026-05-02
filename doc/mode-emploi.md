@@ -727,26 +727,30 @@ Pour ajouter ou modifier des types, intervenir directement en base de donnees da
 
 ### Menu "Mes inscriptions" (tous les adherents connectes)
 
-| Sous-menu | Description |
-|-----------|-------------|
-| Mes inscriptions | Trouver une seance et consulter ses inscriptions (dashboard membre) |
-| Mes notifications | Mes preferences de notifications email |
+| Sous-menu | Visible par | Description |
+|-----------|-------------|-------------|
+| Mes inscriptions | Tous | Trouver une seance et consulter ses inscriptions (dashboard membre) |
+| Mes seances comme moniteur | Membres affectes comme moniteur | Toutes les seances ou l'utilisateur est instructeur |
+| Mes notifications | Tous | Mes preferences de notifications email |
 
 La page **Mes inscriptions** comprend deux onglets :
 - **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe
 - **Mes inscriptions** : seances a venir, annulees et passees
 
+La page **Mes seances comme moniteur** est visible uniquement pour les membres affectes a au moins une seance comme instructeur (assignation par le staff ou auto-volontariat depuis la page de seance pour un responsable de groupe). Elle presente les seances groupees en quatre sections : *Prochaine seance*, *A venir*, *Annulees*, *Passees* (repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
+
 ### Menu "Gestion des inscriptions" (responsable de groupe, staff, admin)
 
 | Sous-menu | Visible par | Description |
 |-----------|-------------|-------------|
-| Evenements | Responsable de groupe+ | Liste des evenements |
+| Evenements | Responsable de groupe+ | Liste des evenements (avec bouton "Ajouter un evenement" en haut de page) |
 | Seances | Responsable de groupe+ | Liste complete des seances avec filtres avances |
-| Ajouter un evenement | Responsable de groupe+ | Formulaire de creation |
 | Gestion des inscriptions | Responsable de groupe+ | Toutes les inscriptions |
 | Statistiques | Staff / Admin | Statistiques de participation |
 | Preferences | Staff / Admin | Parametres du plugin |
 | Modeles de courriels | Admin uniquement | Modeles d'emails |
+
+> Note : l'entree "Ajouter un evenement" a ete retiree du menu (doublon avec le bouton present en haut de la liste des evenements).
 
 ### Tableau de bord
 
@@ -802,6 +806,7 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | GET | `/session/{id}/mail` | Pre-selectionner les inscrits dans le mailing Galette (staff / responsable) |
 | GET | `/my-registrations` | Mes inscriptions |
 | GET | `/my-registrations/ical` | Export iCal de toutes mes inscriptions |
+| GET | `/my-instructor-sessions` | Mes seances comme moniteur (visible si moniteur d'au moins une seance) |
 | GET | `/registrations` | Toutes les inscriptions |
 | POST | `/registrations/filter` | Filtrer les inscriptions |
 | GET | `/stats` | Statistiques de participation |

@@ -57,6 +57,7 @@ $this->register(
         'coursesDoLeaveWaitlist'    => 'member',
         'coursesMyRegistrations'    => 'member',
         'coursesMyRegistrationsIcal' => 'member',
+        'coursesMyInstructorSessions' => 'member',
         'coursesSessionIcal'        => 'member',
         'coursesRegistrations'      => 'groupmanager',
         'coursesRegistrationsFilter' => 'groupmanager',

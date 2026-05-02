@@ -250,6 +250,58 @@ class SessionInstructor
     }
 
     /**
+     * Get all session IDs where a given member is registered as instructor.
+     *
+     * @return int[]
+     */
+    public static function getSessionIdsForMember(Db $zdb, int $memberId): array
+    {
+        if ($memberId <= 0) {
+            return [];
+        }
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->columns(['session_id']);
+            $select->where(['member_id' => $memberId]);
+            $results = $zdb->execute($select);
+            $ids = [];
+            foreach ($results as $r) {
+                $ids[] = (int)$r->session_id;
+            }
+            return $ids;
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error loading instructor sessions for member #' . $memberId . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return [];
+        }
+    }
+
+    /**
+     * Count sessions where a given member is registered as instructor (any status, any date).
+     */
+    public static function countSessionsForMember(Db $zdb, int $memberId): int
+    {
+        if ($memberId <= 0) {
+            return 0;
+        }
+        try {
+            $select = $zdb->select(self::TABLE);
+            $select->columns(['count' => new \Laminas\Db\Sql\Expression('COUNT(*)')]);
+            $select->where(['member_id' => $memberId]);
+            $results = $zdb->execute($select);
+            return (int)$results->current()->count;
+        } catch (Throwable $e) {
+            Analog::log(
+                'Error counting instructor sessions for member #' . $memberId . ': ' . $e->getMessage(),
+                Analog::ERROR
+            );
+            return 0;
+        }
+    }
+
+    /**
      * Find instructor entry by session and member
      */
     public static function findEntry(Db $zdb, int $sessionId, int $memberId): ?self

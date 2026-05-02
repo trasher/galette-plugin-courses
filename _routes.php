@@ -248,6 +248,11 @@ $app->get(
 )->setName('coursesMyRegistrations')->add($authenticate);
 
 $app->get(
+    '/my-instructor-sessions',
+    [SessionsController::class, 'myInstructorSessions']
+)->setName('coursesMyInstructorSessions')->add($authenticate);
+
+$app->get(
     '/registrations[/{option}/{value}]',
     [RegistrationsController::class, 'list']
 )->setName('coursesRegistrations')->add($authenticate);

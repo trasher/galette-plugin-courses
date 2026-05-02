@@ -1365,4 +1365,64 @@ class SessionsController extends AbstractPluginController
         return $response->withStatus(302)
             ->withHeader('Location', $this->routeparser->urlFor('mailing'));
     }
+
+    /**
+     * Page "Mes seances comme moniteur" — lists all sessions where the
+     * current member is registered as instructor (split next / upcoming /
+     * cancelled / past), similar to the "My registrations" page.
+     */
+    public function myInstructorSessions(Request $request, Response $response): Response
+    {
+        $member_id = (int)$this->login->id;
+        if ($member_id <= 0) {
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        $session_ids = SessionInstructor::getSessionIdsForMember($this->zdb, $member_id);
+
+        $sessions = [];
+        $events   = [];
+        foreach ($session_ids as $sid) {
+            $s = new Session($this->zdb, $sid);
+            if ($s->getId() === null) {
+                continue;
+            }
+            $sessions[$sid] = $s;
+            $eid = $s->getEventId();
+            if (!isset($events[$eid])) {
+                $events[$eid] = new Event($this->zdb, $eid);
+            }
+        }
+
+        // Chronological order (ascending date + start time)
+        uasort($sessions, static function (Session $a, Session $b): int {
+            return strcmp(
+                $a->getSessionDate() . $a->getStartTime(),
+                $b->getSessionDate() . $b->getStartTime()
+            );
+        });
+
+        $instructor_names = SessionInstructor::getInstructorNamesForSessions(
+            $this->zdb,
+            array_keys($sessions)
+        );
+
+        $this->view->render(
+            $response,
+            $this->getTemplate('pages/my_instructor_sessions'),
+            [
+                'page_title'       => _T('My instructor sessions', 'courses'),
+                'sessions'         => $sessions,
+                'events'           => $events,
+                'instructor_names' => $instructor_names,
+                'current_member_id' => $member_id,
+                'can_export'       => $this->login->isAdmin()
+                                       || $this->login->isStaff()
+                                       || $this->login->isGroupManager(),
+            ]
+        );
+        return $response;
+    }
 }

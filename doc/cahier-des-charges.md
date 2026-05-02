@@ -631,6 +631,46 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 28 - Page "Mes seances comme moniteur" + nettoyage menu (suppression doublon "Ajouter un evenement")
+
+**Statut : TERMINEE**
+
+- Demande utilisateur :
+  1. L'entree "Ajouter un evenement" du menu *Gestion des inscriptions* est un doublon, le bouton est deja accessible en haut de la liste des evenements.
+  2. Creer une page equivalente a "Mes inscriptions" mais pour le role moniteur, listant toutes les seances ou l'utilisateur connecte est instructeur.
+
+- Suppression doublon menu (`lib/GaletteCourses/PluginGaletteCourses.php`) : retrait de l'entree `coursesEventAdd` dans `getMenusContents()` -> seul le bouton "Ajouter un evenement" en tete de la liste reste accessible. Les routes `/event/add` et `/event/{id}/edit` sont inchangees.
+
+- Nouvelle page `/plugins/courses/my-instructor-sessions` (route `coursesMyInstructorSessions`, ACL `member`) : liste des seances ou l'utilisateur est moniteur, structuree en 4 sections comme la page "Mes inscriptions" :
+  - **Prochaine seance** : toutes les seances a la date la plus proche (peut etre plusieurs seances le meme jour).
+  - **A venir** : autres seances futures non annulees.
+  - **Annulees** : seances futures avec statut `cancelled` (segment rouge avec raison + commentaire d'annulation).
+  - **Passees (repliable)** : toutes les seances dont la date est passee, accordion ferme par defaut.
+
+- Chaque carte affiche : nom de l'evenement (lien vers la fiche), date / horaire / lieu, ou les moniteurs, jauge d'inscrits ou nombre brut. Boutons : **Details** (lien session_show), **iCal** (icone seule), et — si l'utilisateur est responsable de groupe / staff / admin — **Export CSV** des inscrits (icone seule). Pour un membre regulier affecte comme moniteur (cas rare : assignation directe par le staff), seuls Details et iCal sont visibles car l'export CSV reste a l'ACL `groupmanager`.
+
+- Nouvelles methodes dans `Entity/SessionInstructor.php` :
+  - `getSessionIdsForMember(Db $zdb, int $memberId): array` -> retourne les IDs de seances ou le membre est moniteur (toutes statuts confondus).
+  - `countSessionsForMember(Db $zdb, int $memberId): int` -> COUNT(*) optimise utilise pour la condition d'affichage du menu (evite de charger les IDs juste pour tester != 0).
+
+- Nouveau handler `SessionsController::myInstructorSessions(Request, Response): Response` :
+  - Recupere `$member_id = (int)$this->login->id` et bloque le superadmin (id <= 0).
+  - Charge tous les `Session` + `Event` correspondants et trie par `(session_date, start_time)` ascendant via `uasort()`.
+  - Charge les noms de moniteurs en batch via `SessionInstructor::getInstructorNamesForSessions()` (1 requete JOIN).
+  - Calcule `can_export` = `isAdmin || isStaff || isGroupManager` (passe au template pour conditionnel sur le bouton export CSV).
+
+- Menu : entree "Mes seances comme moniteur" (icone `chalkboard teacher`) ajoutee dans le groupe membre, entre "Mes inscriptions" et "Mes notifications". Visible uniquement si `SessionInstructor::countSessionsForMember($zdb, $login->id) > 0` -> le menu reste epure pour les membres qui ne sont pas moniteurs. Le superadmin (`$login->id <= 0`) est exclu.
+
+- Nouveau template `templates/default/pages/my_instructor_sessions.html.twig` calque sur `my_registrations.html.twig` mais sans onglet "Trouver une seance" (pas de mecanisme de recherche libre cote moniteur — l'affectation passe soit par le staff, soit par le bouton "Volunteer as instructor" sur la fiche seance). Reutilise les classes existantes : `courses-cards-grid`, `courses-card`, `courses-next-session`, `courses-card-cancelled`, `courses-past-toggle/-content`, `courses-section-mt`, etc. Aucun nouveau CSS necessaire.
+
+- Fichiers modifies :
+  - `_routes.php` : ajout route GET `/my-instructor-sessions` -> `SessionsController::myInstructorSessions`.
+  - `_define.php` : ajout `'coursesMyInstructorSessions' => 'member'` dans `acls`.
+  - `lib/GaletteCourses/PluginGaletteCourses.php` : suppression entree `coursesEventAdd`, ajout entree `coursesMyInstructorSessions` conditionnelle, import `use GaletteCourses\Entity\SessionInstructor;`.
+  - `lib/GaletteCourses/Entity/SessionInstructor.php` : ajout `getSessionIdsForMember()` et `countSessionsForMember()`.
+  - `lib/GaletteCourses/Controllers/SessionsController.php` : ajout methode `myInstructorSessions()`.
+  - `templates/default/pages/my_instructor_sessions.html.twig` : nouveau template.
+
 ### Phase 27 - Compaction du haut de page detail seance (boutons Retour + Modifier dans le bandeau)
 
 **Statut : TERMINEE**
@@ -938,6 +978,7 @@ Toutes les routes sont prefixees automatiquement par `/plugins/courses/`.
 | POST | `/session/{id}/register` | RegistrationsController::doRegister | member |
 | POST | `/session/{id}/unregister` | RegistrationsController::doUnregister | member |
 | GET | `/my-registrations` | RegistrationsController::myRegistrations | member |
+| GET | `/my-instructor-sessions` | SessionsController::myInstructorSessions | member |
 | GET | `/registrations[/{option}/{value}]` | RegistrationsController::list | groupmanager |
 | POST | `/registrations/filter` | RegistrationsController::filter | groupmanager |
 
