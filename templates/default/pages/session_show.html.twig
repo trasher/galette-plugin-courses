@@ -24,16 +24,18 @@
             </h2>
             <div class="courses-session-header-actions">
                 <a href="{{ url_for('coursesSessions') }}"
-                   class="ui small basic inverted icon button courses-back-btn"
+                   class="ui small basic inverted button courses-header-action-btn courses-back-btn"
                    title="{{ _T("Back", "courses") }}"
                    onclick="if (window.history.length > 1) { window.history.back(); return false; }">
                     <i class="arrow left icon" aria-hidden="true"></i>
+                    <span class="courses-header-action-label">{{ _T("Back", "courses") }}</span>
                 </a>
                 {% if (login.isAdmin() or login.isStaff()) and session.getStatus() != 'cancelled' and session.getSessionDate() >= "now"|date("Y-m-d") %}
                     <a href="{{ url_for('coursesSessionEdit', {'id': session.getId()}) }}"
-                       class="ui small basic inverted icon button"
+                       class="ui small basic inverted button courses-header-action-btn"
                        title="{{ _T("Edit session", "courses") }}">
                         <i class="edit icon" aria-hidden="true"></i>
+                        <span class="courses-header-action-label">{{ _T("Edit session", "courses") }}</span>
                     </a>
                 {% endif %}
             </div>

@@ -212,9 +212,10 @@ tr.courses-pending { background-color: #fffde7 !important; }
 .courses-session-header-flex .courses-session-header-actions .ui.button {
     margin: 0 !important;
 }
-.courses-session-header-flex .courses-session-header-actions .ui.button > i.icon {
-    margin: 0 !important;
+.courses-session-header-flex .courses-session-header-actions .courses-header-action-btn > i.icon {
+    margin: 0 .4em 0 0 !important;
 }
+.courses-header-action-label { vertical-align: middle; }
 
 /* =========================================================
    FILTER PANEL — collapsible on mobile
@@ -397,6 +398,9 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .ui.inverted.segment h2.ui.inverted.header { font-size: 1.25em !important; }
     .ui.inverted.segment h2.ui.inverted.header .sub.header { font-size: .88em !important; line-height: 1.7 !important; }
     .courses-mobile-br { display: inline !important; }
+    /* Header action buttons revert to icon-only on mobile */
+    .courses-session-header-flex .courses-session-header-actions .courses-header-action-btn > i.icon { margin: 0 !important; }
+    .courses-header-action-label { display: none !important; }
 
     /* --- Member-inline: keep remove (X) button inline with the name on mobile --- */
     .courses-member-inline { flex-wrap: wrap; }
