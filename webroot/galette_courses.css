@@ -503,3 +503,33 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .mailtpl-var-pill { transition: none !important; }
     .courses-fill-row .ui.progress > .bar { transition: none !important; }
 }
+
+/* =========================================================
+   FILTER FORM — plain native <select>s + action buttons
+   Used on my_registrations and my_instructor_sessions browse tabs.
+   Plain selects (not Fomantic UI) ensure reliable change events
+   across all browsers and devices.
+   ========================================================= */
+.courses-native-select {
+    width: 100%;
+    padding: .67em 1em;
+    border: 1px solid rgba(34, 36, 38, .15);
+    border-radius: .28em;
+    background: #fff;
+    font-size: 1em;
+    line-height: 1.21;
+    color: rgba(0, 0, 0, .87);
+}
+.courses-native-select:focus {
+    border-color: #85b7d9;
+    outline: none;
+}
+.courses-filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5em;
+    align-items: center;
+}
+@media only screen and (max-width: 767px) {
+    .courses-filter-actions .button { flex: 1 1 auto; }
+}

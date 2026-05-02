@@ -68,13 +68,15 @@
             {{ _T("No session available for you to volunteer as instructor.", "courses") }}
         </div>
     {% else %}
-        {# Filtres dynamiques (JS, sans rechargement) #}
+        {# Filtres dynamiques (JS, sans rechargement)
+           NOTE: <select> natifs (pas Fomantic UI) — voir my_registrations
+           pour le rationale. #}
         <div class="ui secondary yellow segment courses-browse-filters" style="margin-bottom:1em;">
             <div class="ui form">
                 <div class="three fields" style="margin-bottom:.5em;">
                     <div class="field">
                         <label for="instr_browse_type_filter">{{ _T("Type", "courses") }}</label>
-                        <select id="instr_browse_type_filter" class="ui search dropdown">
+                        <select id="instr_browse_type_filter" class="courses-native-select">
                             <option value="">{{ _T("All types", "courses") }}</option>
                             {% for type in volunteer_event_types %}
                                 <option value="{{ type.getId() }}">{{ type.getLabel() }}</option>
@@ -83,7 +85,7 @@
                     </div>
                     <div class="field">
                         <label for="instr_browse_name_filter">{{ _T("Activity", "courses") }}</label>
-                        <select id="instr_browse_name_filter" class="ui search dropdown">
+                        <select id="instr_browse_name_filter" class="courses-native-select">
                             <option value="">{{ _T("All activities", "courses") }}</option>
                             {% for item in volunteer_available_names %}
                                 <option value="{{ item.name }}" data-type-id="{{ item.type_id }}">{{ item.name }}</option>
@@ -95,7 +97,11 @@
                         <input type="date" id="instr_browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
                     </div>
                 </div>
-                <div>
+                <div class="courses-filter-actions">
+                    <button type="button" id="instr_browse_apply_filter" class="ui small labeled icon primary button">
+                        <i class="search icon" aria-hidden="true"></i>
+                        {{ _T("Filter", "courses") }}
+                    </button>
                     <button type="button" id="instr_browse_clear_filter" class="ui small labeled icon button">
                         <i class="trash alt red icon" aria-hidden="true"></i>
                         {{ _T("Clear filter", "courses") }}
@@ -475,15 +481,14 @@ $(function() {
         $(this).find('.dropdown.icon').toggleClass('rotated');
     });
 
-    // ----- Browse filters (client-side) -----
+    // ----- Browse filters (client-side, plain HTML <select>s) -----
     var $today = $('#instr_browse_date_from').val();
-    // Local state — see my_registrations.html.twig for rationale.
-    var fType = '';
-    var fName = '';
-    var fDate = $today;
 
     function applyInstrBrowseFilters() {
         if (!$('#instr-browse-cards-grid').length) { return; }
+        var fType = $('#instr_browse_type_filter').val() || '';
+        var fName = $('#instr_browse_name_filter').val() || '';
+        var fDate = $('#instr_browse_date_from').val() || '';
         var visible = 0;
 
         $('#instr-browse-cards-grid .courses-browse-card-col').each(function() {
@@ -493,9 +498,9 @@ $(function() {
             var cDate = $col.attr('data-date') || '';
 
             var show = true;
-            if (fType && cType !== fType.toString())                          show = false;
+            if (fType && cType !== fType.toString())                                show = false;
             if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
-            if (fDate && cDate < fDate)                                       show = false;
+            if (fDate && cDate < fDate)                                             show = false;
 
             $col.toggle(show);
             if (show) visible++;
@@ -510,51 +515,37 @@ $(function() {
     }
 
     function cascadeInstrNameOptions() {
+        var fType = ($('#instr_browse_type_filter').val() || '').toString();
         var $name = $('#instr_browse_name_filter');
         $name.find('option').each(function() {
             var $opt = $(this);
             if ($opt.val() === '') { return; }
             var optType = ($opt.attr('data-type-id') || '').toString();
-            var matches = !fType || optType === fType.toString();
-            $opt.prop('disabled', !matches);
+            $opt.prop('disabled', !!(fType && optType !== fType));
         });
-        $name.dropdown('refresh');
-        if (fName) {
-            var $curOpt = $name.find('option[value="' + fName.replace(/"/g, '\\"') + '"]');
-            if ($curOpt.prop('disabled')) {
-                fName = '';
-                $name.dropdown('clear');
+        var curName = $name.val();
+        if (curName) {
+            var curOpt = $name.find('option[value="' + curName.replace(/"/g, '\\"') + '"]')[0];
+            if (curOpt && curOpt.disabled) {
+                $name.val('');
             }
         }
     }
 
-    // Initialize dropdowns with Fomantic UI onChange callbacks.
-    // See my_registrations.html.twig for rationale.
-    $('#instr_browse_type_filter').dropdown({
-        onChange: function(value) {
-            fType = value || '';
-            cascadeInstrNameOptions();
-            applyInstrBrowseFilters();
-        }
-    });
-    $('#instr_browse_name_filter').dropdown({
-        onChange: function(value) {
-            fName = value || '';
-            applyInstrBrowseFilters();
-        }
-    });
-    $('#instr_browse_date_from').on('change', function() {
-        fDate = $(this).val();
+    $('#instr_browse_type_filter').on('change', function() {
+        cascadeInstrNameOptions();
         applyInstrBrowseFilters();
     });
+    $('#instr_browse_name_filter').on('change', applyInstrBrowseFilters);
+    $('#instr_browse_date_from').on('change', applyInstrBrowseFilters);
+
+    // Explicit Filter button — guaranteed trigger.
+    $('#instr_browse_apply_filter').on('click', applyInstrBrowseFilters);
 
     $('#instr_browse_clear_filter').on('click', function() {
-        fType = '';
-        fName = '';
-        fDate = $today;
-        $('#instr_browse_type_filter').dropdown('clear');
+        $('#instr_browse_type_filter').val('');
         $('#instr_browse_name_filter').find('option').prop('disabled', false);
-        $('#instr_browse_name_filter').dropdown('refresh').dropdown('clear');
+        $('#instr_browse_name_filter').val('');
         $('#instr_browse_date_from').val($today);
         applyInstrBrowseFilters();
     });

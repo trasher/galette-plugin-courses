@@ -79,13 +79,17 @@
     {% endif %}
 
     {% if available_sessions|length > 0 %}
-    {# Filtres dynamiques (JS, sans rechargement) #}
+    {# Filtres dynamiques (JS, sans rechargement)
+       NOTE: les <select> sont volontairement des selects HTML natifs (pas
+       de class="ui search dropdown") pour eviter les problemes de timing
+       et de synchronisation de Fomantic UI. Les evenements `change`
+       natifs sont fiables sur tous les navigateurs / mobiles. #}
     <div class="ui secondary yellow segment courses-browse-filters" style="margin-bottom:1em;">
         <div class="ui form">
             <div class="three fields" style="margin-bottom:.5em;">
                 <div class="field">
                     <label for="browse_type_filter">{{ _T("Type", "courses") }}</label>
-                    <select id="browse_type_filter" class="ui search dropdown">
+                    <select id="browse_type_filter" class="courses-native-select">
                         <option value="">{{ _T("All types", "courses") }}</option>
                         {% for type in browse_event_types %}
                             <option value="{{ type.getId() }}">{{ type.getLabel() }}</option>
@@ -94,7 +98,7 @@
                 </div>
                 <div class="field">
                     <label for="browse_name_filter">{{ _T("Activity", "courses") }}</label>
-                    <select id="browse_name_filter" class="ui search dropdown">
+                    <select id="browse_name_filter" class="courses-native-select">
                         <option value="">{{ _T("All activities", "courses") }}</option>
                         {% for item in browse_available_names %}
                             <option value="{{ item.name }}" data-type-id="{{ item.type_id }}">{{ item.name }}</option>
@@ -106,7 +110,11 @@
                     <input type="date" id="browse_date_from" value="{{ "now"|date("Y-m-d") }}"/>
                 </div>
             </div>
-            <div>
+            <div class="courses-filter-actions">
+                <button type="button" id="browse_apply_filter" class="ui small labeled icon primary button">
+                    <i class="search icon" aria-hidden="true"></i>
+                    {{ _T("Filter", "courses") }}
+                </button>
                 <button type="button" id="browse_clear_filter" class="ui small labeled icon button">
                     <i class="trash alt red icon" aria-hidden="true"></i>
                     {{ _T("Clear filter", "courses") }}
@@ -643,38 +651,31 @@
 {% block javascripts %}
 <script>
 $(function() {
-    // Browse filters (client-side)
+    // Browse filters (client-side, plain HTML <select>s).
     var $today = $('#browse_date_from').val();
-    // Local state — do NOT read $('#xxx').val() because Fomantic UI's
-    // dropdown does not always sync the underlying <select>.value
-    // immediately when the user picks an item; rely on the value passed
-    // to onChange() instead (single source of truth).
-    var fType = '';
-    var fName = '';
-    var fDate = $today;
 
     function applyBrowseFilters() {
+        var fType = $('#browse_type_filter').val() || '';
+        var fName = $('#browse_name_filter').val() || '';
+        var fDate = $('#browse_date_from').val() || '';
         var visible = 0;
 
         $('#browse-cards-grid .courses-browse-card-col').each(function() {
             var $col = $(this);
-            // .attr() bypasses jQuery's .data() value cache so the
-            // attribute is read fresh every time.
             var cType = ($col.attr('data-type-id') || '').toString();
             var cName = ($col.attr('data-event-name') || '').toString();
             var cDate = $col.attr('data-date') || '';
 
             var show = true;
-            if (fType && cType !== fType.toString())                          show = false;
+            if (fType && cType !== fType.toString())                                show = false;
             if (fName && cName.trim().toLowerCase() !== fName.trim().toLowerCase()) show = false;
-            if (fDate && cDate < fDate)                                       show = false;
+            if (fDate && cDate < fDate)                                             show = false;
 
             $col.toggle(show);
             if (show) visible++;
         });
 
         $('#browse-no-results').toggle(visible === 0 && $('#browse-cards-grid').length > 0);
-        // Sync the tab badge with the visible card count
         var $badge = $('#browse-count-badge');
         if ($badge.length) {
             $badge.text(visible);
@@ -683,58 +684,41 @@ $(function() {
     }
 
     function cascadeNameOptions() {
-        // Cascade: restrict name options to the selected type by disabling
-        // (Fomantic UI renders disabled options greyed out; toggling the
-        // <option> display has no effect once Fomantic has built its menu).
+        // When a Type is picked, disable Name options that don't match.
+        var fType = ($('#browse_type_filter').val() || '').toString();
         var $name = $('#browse_name_filter');
         $name.find('option').each(function() {
             var $opt = $(this);
             if ($opt.val() === '') { return; }
             var optType = ($opt.attr('data-type-id') || '').toString();
-            var matches = !fType || optType === fType.toString();
-            $opt.prop('disabled', !matches);
+            $opt.prop('disabled', !!(fType && optType !== fType));
         });
-        $name.dropdown('refresh');
-        // Clear current name selection if it no longer matches the type
-        if (fName) {
-            var $curOpt = $name.find('option[value="' + fName.replace(/"/g, '\\"') + '"]');
-            if ($curOpt.prop('disabled')) {
-                fName = '';
-                $name.dropdown('clear');
+        // Reset name if its current option is no longer enabled
+        var curName = $name.val();
+        if (curName) {
+            var curOpt = $name.find('option[value="' + curName.replace(/"/g, '\\"') + '"]')[0];
+            if (curOpt && curOpt.disabled) {
+                $name.val('');
             }
         }
     }
 
-    // Initialize dropdowns with Fomantic UI onChange callbacks.
-    // Why: relying on the underlying <select>'s `change` event proved
-    // unreliable (Fomantic does not always fire it / sync it), so use the
-    // dropdown's own onChange API which is guaranteed to fire on every
-    // selection AND provides the new value directly as a parameter.
-    $('#browse_type_filter').dropdown({
-        onChange: function(value) {
-            fType = value || '';
-            cascadeNameOptions();
-            applyBrowseFilters();
-        }
-    });
-    $('#browse_name_filter').dropdown({
-        onChange: function(value) {
-            fName = value || '';
-            applyBrowseFilters();
-        }
-    });
-    $('#browse_date_from').on('change', function() {
-        fDate = $(this).val();
+    // Plain native change events fire reliably on plain <select>s.
+    $('#browse_type_filter').on('change', function() {
+        cascadeNameOptions();
         applyBrowseFilters();
     });
+    $('#browse_name_filter').on('change', applyBrowseFilters);
+    $('#browse_date_from').on('change', applyBrowseFilters);
+
+    // Explicit Filter button — guaranteed trigger regardless of how the
+    // user navigated the controls (touchscreen quirks, accessibility tools).
+    $('#browse_apply_filter').on('click', applyBrowseFilters);
 
     $('#browse_clear_filter').on('click', function() {
-        fType = '';
-        fName = '';
-        fDate = $today;
-        $('#browse_type_filter').dropdown('clear');
+        $('#browse_type_filter').val('');
         $('#browse_name_filter').find('option').prop('disabled', false);
-        $('#browse_name_filter').dropdown('refresh').dropdown('clear');
+        $('#browse_name_filter').val('');
         $('#browse_date_from').val($today);
         applyBrowseFilters();
     });
