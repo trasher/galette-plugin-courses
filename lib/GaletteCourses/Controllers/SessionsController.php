@@ -310,7 +310,7 @@ class SessionsController extends AbstractPluginController
             try {
                 $currentMemberId = (int)$this->login->id;
                 $currentAdherent = new Adherent($this->zdb, $currentMemberId, ['children' => true]);
-                $childrenIds = $currentAdherent->children ?? [];
+                $childrenIds = $currentAdherent->children;
                 // Collect valid child IDs first
                 $validChildIds = [];
                 foreach ($childrenIds as $child) {
@@ -340,7 +340,7 @@ class SessionsController extends AbstractPluginController
 
                 foreach ($validChildIds as $childId) {
                     $childAdherent = new Adherent($this->zdb, $childId);
-                    $childName = $childAdherent->sname ?? trim(($childAdherent->name ?? '') . ' ' . ($childAdherent->surname ?? ''));
+                    $childName = $childAdherent->sname ?? trim($childAdherent->name . ' ' . ($childAdherent->surname ?? ''));
                     $childNickname = !empty($childAdherent->nickname) ? (string)$childAdherent->nickname : '';
 
                     // A registered child always appears (so the unregister button is always shown),

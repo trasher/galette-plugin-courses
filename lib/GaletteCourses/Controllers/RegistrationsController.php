@@ -415,7 +415,7 @@ class RegistrationsController extends AbstractController
                 'name'     => $currentAdherent->sname ?? '',
                 'nickname' => !empty($currentAdherent->nickname) ? (string)$currentAdherent->nickname : '',
             ];
-            foreach ($currentAdherent->children ?? [] as $child) {
+            foreach ($currentAdherent->children as $child) {
                 $childId = is_object($child) ? (int)$child->id : (int)$child;
                 if ($childId <= 0) {
                     continue;
@@ -787,7 +787,7 @@ class RegistrationsController extends AbstractController
 
         try {
             $parentAdherent = new Adherent($this->zdb, $member_id, ['children' => true]);
-            $childrenIds = $parentAdherent->children ?? [];
+            $childrenIds = $parentAdherent->children;
 
             // Children already registered for this session
             $regs_repo = new Registrations($this->zdb);
@@ -1128,7 +1128,7 @@ class RegistrationsController extends AbstractController
     private function isChildOf(int $parentId, int $childId): bool
     {
         $parentAdherent = new Adherent($this->zdb, $parentId, ['children' => true]);
-        foreach ($parentAdherent->children ?? [] as $child) {
+        foreach ($parentAdherent->children as $child) {
             $cid = is_object($child) ? (int)$child->id : (int)$child;
             if ($cid === $childId) {
                 return true;
