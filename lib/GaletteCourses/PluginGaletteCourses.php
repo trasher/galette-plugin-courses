@@ -151,7 +151,9 @@ class PluginGaletteCourses extends GalettePlugin
 
     public static function getMyDashboardsContents(): array
     {
-        return [
+        global $login, $zdb;
+
+        $tiles = [
             [
                 'label' => _T('My registrations', 'courses'),
                 'title' => _T('Register for sessions and view your registrations', 'courses'),
@@ -161,6 +163,24 @@ class PluginGaletteCourses extends GalettePlugin
                 'icon' => 'calendar_spiral',
             ],
         ];
+
+        // Tuile "Mes seances comme moniteur" — visible uniquement si l'adherent
+        // connecte est moniteur d'au moins une seance.
+        if ($login !== null && $login->isLogged()) {
+            $memberId = (int)$login->id;
+            if ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
+                $tiles[] = [
+                    'label' => _T('My instructor sessions', 'courses'),
+                    'title' => _T('View the sessions where you are registered as instructor', 'courses'),
+                    'route' => [
+                        'name' => 'coursesMyInstructorSessions',
+                    ],
+                    'icon' => 'clipboard',
+                ];
+            }
+        }
+
+        return $tiles;
     }
 
     public static function getListActionsContents(Adherent $member): array
