@@ -527,11 +527,19 @@ $(function() {
         }
     }
 
-    $('#instr_browse_type_filter').on('change', function() {
-        cascadeInstrNameOptions();
-        applyInstrBrowseFilters();
+    // Initialize dropdowns with Fomantic UI onChange callbacks.
+    // Why: relying on the underlying <select>'s `change` event proved
+    // unreliable (Fomantic does not always fire it), so use the dropdown's
+    // own onChange API which is guaranteed to fire on every selection.
+    $('#instr_browse_type_filter').dropdown({
+        onChange: function() {
+            cascadeInstrNameOptions();
+            applyInstrBrowseFilters();
+        }
     });
-    $('#instr_browse_name_filter').on('change', applyInstrBrowseFilters);
+    $('#instr_browse_name_filter').dropdown({
+        onChange: applyInstrBrowseFilters
+    });
     $('#instr_browse_date_from').on('change', applyInstrBrowseFilters);
 
     $('#instr_browse_clear_filter').on('click', function() {
