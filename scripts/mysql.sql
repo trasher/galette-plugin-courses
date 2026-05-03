@@ -168,11 +168,12 @@ CREATE TABLE galette_courses_member_preferences (
 
 -- Daily-digest queue: rows accumulated by notifyNewSessions during the day,
 -- swept and emailed once per day by the cron (one consolidated email per recipient).
+-- Note: integer columns omit the legacy display width (`int(10)`) — deprecated in MySQL 8.
 CREATE TABLE galette_courses_pending_notifications (
-    id_pending int(10) unsigned NOT NULL auto_increment,
-    member_id int(10) unsigned NOT NULL,
-    event_id int(10) unsigned NOT NULL,
-    session_id int(10) unsigned NOT NULL,
+    id_pending int unsigned NOT NULL auto_increment,
+    member_id int unsigned NOT NULL,
+    event_id int unsigned NOT NULL,
+    session_id int unsigned NOT NULL,
     ref varchar(30) NOT NULL,
     created_at datetime NOT NULL,
     PRIMARY KEY (id_pending),
