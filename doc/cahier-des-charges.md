@@ -631,15 +631,19 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
-### Phase 32 - Acces "Mes seances comme moniteur" elargi aux roles admin / staff / responsable de groupe
+### Phase 32 - Acces "Mes seances comme moniteur" : responsables de groupe + moniteurs affectes
 
 **Statut : TERMINEE**
 
-- Demande utilisateur : un responsable de groupe (potentiel moniteur) doit pouvoir acceder a la page "Mes seances comme moniteur" meme s'il n'a pas (encore) de seance assignee. C'est par cette page qu'il peut se proposer comme moniteur via l'onglet *Trouver une seance*.
+- Demande utilisateur : un responsable de groupe (potentiel moniteur) doit pouvoir acceder a la page "Mes seances comme moniteur" meme s'il n'a pas (encore) de seance assignee. C'est par cette page qu'il peut se proposer comme moniteur via l'onglet *Trouver une seance*. **Les admins et staff ne doivent PAS voir l'entree** par defaut (ils gerent les affectations de moniteurs depuis "Gestion des inscriptions").
 
 - Avant : la condition d'affichage du menu et de la tuile dashboard etait `countSessionsForMember > 0` uniquement -> un responsable de groupe sans affectation n'avait aucun moyen de decouvrir cette page.
 
-- Apres (`PluginGaletteCourses::getMenusContents()` et `getDashboardsContents()`) : la condition devient `isAdmin() || isStaff() || isGroupManager() || (countSessionsForMember > 0)`. Le seul cas ou l'entree reste cachee est celui d'un membre regulier sans aucune affectation (qui ne peut de toute facon pas se proposer volontaire — l'auto-volontariat reste reserve aux admins/staff/responsables de groupe par `doVolunteerInstructor`).
+- Apres (`PluginGaletteCourses::getMenusContents()` et `getDashboardsContents()`) : la condition devient `isGroupManager() || (countSessionsForMember > 0)`. Cas couverts :
+  - Responsable de groupe sans affectation : voit l'entree (peut se proposer volontaire).
+  - Membre regulier affecte par le staff : voit l'entree (preserve le comportement Phase 28).
+  - Admin ou staff affecte ponctuellement comme moniteur : voit l'entree (a sa propre liste de seances).
+  - Admin / staff sans affectation : ne voit pas l'entree (gere les affectations via "Gestion des inscriptions").
 
 - Doc utilisateur (`doc/mode-emploi.md`) : section "Mes seances comme moniteur" mise a jour pour expliciter les conditions de visibilite par role.
 

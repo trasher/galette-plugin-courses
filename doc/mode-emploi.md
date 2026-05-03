@@ -741,8 +741,10 @@ La page **Mes inscriptions** comprend deux onglets :
 - **Mes inscriptions** : seances a venir, annulees et passees
 
 La page **Mes seances comme moniteur** est visible pour :
-- les **admins**, **staff** et **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Trouver une seance* ;
-- tout autre membre regulier affecte a au moins une seance comme instructeur (assignation par le staff).
+- les **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Trouver une seance* ;
+- tout autre membre affecte a au moins une seance comme instructeur (typiquement un membre regulier assignee par le staff, mais aussi un admin/staff lui-meme affecte ponctuellement).
+
+Les admins et le staff ne voient pas l'entree par defaut : ils gerent les affectations de moniteurs depuis le menu *Gestion des inscriptions*.
 
 Elle presente deux onglets :
 - **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions")

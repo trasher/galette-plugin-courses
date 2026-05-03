@@ -52,15 +52,16 @@ class PluginGaletteCourses extends GalettePlugin
         ];
 
         // Lien "Mes seances comme moniteur" : visible si le membre
-        //  - est deja moniteur d'au moins une seance, OU
-        //  - peut le devenir : admin, staff, ou responsable de groupe
-        //    (l'onglet "Trouver une seance" leur permet de se proposer
-        //    comme moniteur, meme sans affectation actuelle).
+        //  - est responsable de groupe (peut se proposer volontaire via
+        //    l'onglet "Trouver une seance" meme sans affectation), OU
+        //  - est deja moniteur d'au moins une seance (preserve la
+        //    visibilite pour les regulars affectes manuellement par le staff).
+        // Les admin et staff ne voient pas l'entree par defaut (ils gerent
+        // les affectations via "Gestion des inscriptions"), sauf s'ils
+        // sont eux-memes affectes a une seance comme moniteur.
         $memberId = (int)$login->id;
         $canSeeInstructorPage =
-            $login->isAdmin()
-            || $login->isStaff()
-            || $login->isGroupManager()
+            $login->isGroupManager()
             || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
         if ($canSeeInstructorPage) {
             $memberItems[] = [
@@ -173,15 +174,13 @@ class PluginGaletteCourses extends GalettePlugin
         ];
 
         // Tuile "Mes seances comme moniteur" — visible si l'adherent
-        //  - est deja moniteur d'au moins une seance, OU
-        //  - peut le devenir : admin, staff, ou responsable de groupe
-        //    (peut se proposer comme moniteur via l'onglet Trouver une seance).
+        //  - est responsable de groupe (peut se proposer volontaire), OU
+        //  - est deja moniteur d'au moins une seance.
+        // Les admin et staff ne voient pas la tuile par defaut.
         if ($login !== null && $login->isLogged()) {
             $memberId = (int)$login->id;
             $canSeeInstructorPage =
-                $login->isAdmin()
-                || $login->isStaff()
-                || $login->isGroupManager()
+                $login->isGroupManager()
                 || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
             if ($canSeeInstructorPage) {
                 $tiles[] = [
