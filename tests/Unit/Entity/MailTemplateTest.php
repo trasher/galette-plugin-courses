@@ -129,7 +129,6 @@ final class MailTemplateTest extends TestCase
     public static function refsThatMustExposeEventDescription(): array
     {
         return [
-            'publication_manager'    => [MailTemplate::REF_PUBLICATION_MANAGER],
             'new_sessions_manager'   => [MailTemplate::REF_NEW_SESSIONS_MANAGER],
             'instructor_assigned'    => [MailTemplate::REF_INSTRUCTOR_ASSIGNED],
             'waitlist_promotion'     => [MailTemplate::REF_WAITLIST_PROMOTION],

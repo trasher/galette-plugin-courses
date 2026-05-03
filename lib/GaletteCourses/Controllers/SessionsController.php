@@ -808,8 +808,12 @@ class SessionsController extends AbstractPluginController
                 }
                 $notification->notifyInstructorAssigned($session, $event, $instructorName);
             } else {
-                // No monitor yet: notify group managers so they can volunteer
-                $notification->notifyPublication($event);
+                // No monitor yet: notify group managers so they can volunteer.
+                // Reactivation = the session is back in circulation, equivalent
+                // to a fresh session creation -> use notifyNewSessions (single
+                // session passed as a 1-element array). Same template as
+                // regular session creation, dates_list contains the one date.
+                $notification->notifyNewSessions($event, [$session]);
             }
 
             $this->flash->addMessage('success_detected', _T('Session has been reactivated.', 'courses'));

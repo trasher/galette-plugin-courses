@@ -104,31 +104,6 @@ class CourseNotification
     }
 
     /**
-     * Notify eligible members when an event is published (validated).
-     * Group managers of concerned groups are also notified separately
-     * so they can volunteer as instructor.
-     */
-    public function notifyPublication(Event $event): void
-    {
-        $locationLine = $event->getLocation()
-            ? "\n" . _T('Location: ', 'courses') . $event->getLocation()
-            : '';
-
-        $vars = [
-            'event_name'        => $event->getName(),
-            'event_description' => $this->buildDescriptionBlock($event->getDescription()),
-            'location_line'     => $locationLine,
-        ];
-
-        // Notify group managers only: members will be notified when the first instructor is assigned
-        $managerRecipients = $this->getGroupManagerEmails($event);
-        if (!empty($managerRecipients)) {
-            [$subject, $message] = $this->renderTemplate(MailTemplate::REF_PUBLICATION_MANAGER, $vars);
-            $this->sendMail($managerRecipients, $subject, $message);
-        }
-    }
-
-    /**
      * Notify eligible members and group managers when new sessions are generated.
      * Members receive an invitation to register.
      * Group managers (not already notified as members) receive an invitation to volunteer as instructor.

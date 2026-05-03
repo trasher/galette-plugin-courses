@@ -631,6 +631,26 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 34 - Nettoyage : suppression complete de REF_PUBLICATION_MANAGER et notifyPublication
+
+**Statut : TERMINEE**
+
+- Suite a la Phase 33, `notifyPublication($event)` n'etait plus utilisee que par `SessionsController::doReactivate` quand on reactivait une seance annulee sans moniteur. Le template `REF_PUBLICATION_MANAGER` etait donc maintenu juste pour ce cas residuel, ce qui n'avait pas de sens semantiquement (reactivation = remise en circulation d'une seance, pas publication d'un evenement).
+
+- `SessionsController::doReactivate` modifie : remplace `notifyPublication($event)` par `notifyNewSessions($event, [$session])` (un seul element dans le tableau). Le template `REF_NEW_SESSIONS_MANAGER` est utilise — son `dates_list` contient simplement la date unique de la seance reactivee. Comportement utilisateur identique : les responsables de groupe sont invites a se porter volontaire.
+
+- Suppressions :
+  - `CourseNotification::notifyPublication()` (toute la methode).
+  - `MailTemplate::REF_PUBLICATION_MANAGER` (constante + 6 references : `getAvailableRefs`, `getAvailableVars`, `getRefLabel`, `getRefDescription`, `getDefaultSubject`, `getDefaultBody`).
+  - 4 chaines i18n dans `lang/courses_fr_FR.utf8.po` (label, description, sujet, corps du modele). Le `.mo` deviendra desync — il sera recompile par Poedit cote utilisateur ; les chaines orphelines dans le `.mo` sont sans effet (le code ne les demande plus).
+
+- Update :
+  - Description de `REF_NEW_SESSIONS_MANAGER` etendue pour refleter qu'elle couvre aussi le cas de reactivation : "Sent to group managers when new sessions are generated (or a cancelled session is reactivated without instructor)...".
+
+- Test : `tests/Unit/Entity/MailTemplateTest.php::refsThatMustExposeEventDescription` mis a jour (retrait de l'entree `publication_manager`).
+
+- `MailTemplate` passe de 9 refs a 8 : SUBMISSION, VALIDATION, REJECTION, NEW_SESSIONS_MANAGER, INSTRUCTOR_ASSIGNED, WAITLIST_PROMOTION, CANCELLATION, WAITLIST_CANCELLATION.
+
 ### Phase 33 - Suppression des courriels de publication a la creation/validation d'evenement
 
 **Statut : TERMINEE**
