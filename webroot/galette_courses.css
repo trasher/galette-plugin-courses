@@ -354,16 +354,43 @@ tr.courses-pending { background-color: #fffde7 !important; }
     .ui.fluid.action.input input { width: 100% !important; border-radius: .28rem !important; margin-bottom: .4em; }
     .ui.fluid.action.input .ui.button { width: 100% !important; border-radius: .28rem !important; min-height: 44px !important; }
 
-    /* --- Tab menu : pleine largeur, onglets 50/50 --- */
-    #my-sessions-tabs { display: flex !important; flex-wrap: nowrap !important; }
-    #my-sessions-tabs .item {
-        flex: 1 !important; justify-content: center !important; text-align: center !important;
-        flex-direction: column !important; align-items: center !important;
-        padding: .7em .5em !important; font-size: .88em; white-space: normal !important;
-        gap: .25em !important;
+    /* --- Tab menus (Mes inscriptions / Mes seances comme moniteur) :
+       pleine largeur, onglets 50/50, libelles qui passent a la ligne
+       si trop longs pour tenir sur un seul ecran (ex: "Mes seances
+       comme moniteur"). --- */
+    #my-sessions-tabs,
+    #my-instructor-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
     }
-    #my-sessions-tabs .item i.icon { margin: 0 !important; font-size: 1.1em; }
-    .courses-tab-text { font-size: .82em; display: block; line-height: 1.2; }
+    #my-sessions-tabs .item,
+    #my-instructor-tabs .item {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        text-align: center !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: .7em .5em !important;
+        font-size: .88em;
+        white-space: normal !important;
+        gap: .25em !important;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    #my-sessions-tabs .item i.icon,
+    #my-instructor-tabs .item i.icon {
+        margin: 0 !important;
+        font-size: 1.1em;
+    }
+    .courses-tab-text {
+        font-size: .82em;
+        display: block;
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
 
     /* --- Infoline --- */
     .infoline .ui.basic.horizontal.segments { flex-direction: column !important; }
