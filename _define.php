@@ -72,6 +72,7 @@ $this->register(
         'coursesDoWalkIn'            => 'groupmanager',
         'coursesProxyRegisterForm'   => 'groupmanager',
         'coursesDoProxyRegister'     => 'groupmanager',
+        'coursesDoProxyUnregister'   => 'member',
         'coursesParentRegisterForm'  => 'member',
         'coursesDoParentRegister'    => 'member',
         'coursesDoParentUnregister'  => 'member',

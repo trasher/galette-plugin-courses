@@ -1038,6 +1038,68 @@ class RegistrationsController extends AbstractController
             ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
     }
 
+    public function doProxyUnregister(Request $request, Response $response, int $id): Response
+    {
+        $session = new Session($this->zdb, $id);
+        if ($session->getId() === null) {
+            $this->flash->addMessage('error_detected', _T('Session not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessions'));
+        }
+
+        $actor_id = (int)$this->login->id;
+        $is_session_instructor = $actor_id > 0
+            && SessionInstructor::isInstructor($this->zdb, $id, $actor_id);
+
+        if (!$this->login->isAdmin() && !$this->login->isStaff() && !$is_session_instructor) {
+            $this->flash->addMessage(
+                'error_detected',
+                _T('You do not have permission to cancel this registration.', 'courses')
+            );
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        $post = $request->getParsedBody();
+        $member_id = (int)($post['member_id'] ?? 0);
+        if ($member_id <= 0) {
+            $this->flash->addMessage('error_detected', _T('Invalid request.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        $registration = Registration::findRegistration($this->zdb, $id, $member_id);
+        if ($registration === null) {
+            $this->flash->addMessage('error_detected', _T('Registration not found.', 'courses'));
+            return $response
+                ->withStatus(302)
+                ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+        }
+
+        $event = $session->getEvent();
+        $result = $registration->cancel($session);
+        if ($result !== false) {
+            $this->history->add(
+                _T('[Courses] Registration cancelled by staff/instructor', 'courses'),
+                sprintf('session #%d — member #%d (by #%d)', $id, $member_id, $actor_id)
+            );
+            $this->flash->addMessage('success_detected', _T('Registration cancelled successfully.', 'courses'));
+            if (is_int($result)) {
+                $notification = new CourseNotification($this->zdb, $this->preferences, new PluginPreferences($this->zdb), new MemberPreferences($this->zdb), $this->history);
+                $notification->notifyWaitlistPromotion($session, $event, $result);
+            }
+        } else {
+            $this->flash->addMessage('error_detected', _T('An error occurred during cancellation.', 'courses'));
+        }
+
+        return $response
+            ->withStatus(302)
+            ->withHeader('Location', $this->routeparser->urlFor('coursesSessionShow', ['id' => (string)$id]));
+    }
+
     public function doMarkAttendance(Request $request, Response $response, int $id): Response
     {
         $session = new Session($this->zdb, $id);

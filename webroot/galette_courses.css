@@ -66,6 +66,8 @@
 .courses-save-right { text-align: right; }
 .courses-inline-form { display: inline; }
 .courses-remove-form { margin-left: auto; }
+.courses-hidden-form { display: none; }
+.courses-attlist-actions { text-align: right; white-space: nowrap; }
 
 /* ----- SPACING ----- */
 .courses-section-mt    { margin-top: 1.5em !important; }

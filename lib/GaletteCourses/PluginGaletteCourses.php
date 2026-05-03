@@ -52,16 +52,20 @@ class PluginGaletteCourses extends GalettePlugin
         ];
 
         // Lien "Mes seances comme moniteur" : visible si le membre
-        //  - est responsable de groupe (peut se proposer volontaire via
-        //    l'onglet "Trouver une seance" meme sans affectation), OU
+        //  - est responsable de groupe pur (ni admin ni staff) — peut se
+        //    proposer volontaire via l'onglet "Trouver une seance" meme
+        //    sans affectation, OU
         //  - est deja moniteur d'au moins une seance (preserve la
-        //    visibilite pour les regulars affectes manuellement par le staff).
+        //    visibilite pour les regulars affectes manuellement, et
+        //    pour les admin/staff exceptionnellement affectes).
         // Les admin et staff ne voient pas l'entree par defaut (ils gerent
-        // les affectations via "Gestion des inscriptions"), sauf s'ils
-        // sont eux-memes affectes a une seance comme moniteur.
+        // les affectations via "Gestion des inscriptions"), meme s'ils sont
+        // groupManager — sauf s'ils sont eux-memes affectes comme moniteur.
         $memberId = (int)$login->id;
-        $canSeeInstructorPage
-            = $login->isGroupManager()
+        $isPureGroupManager = $login->isGroupManager()
+            && !$login->isAdmin()
+            && !$login->isStaff();
+        $canSeeInstructorPage = $isPureGroupManager
             || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
         if ($canSeeInstructorPage) {
             $memberItems[] = [
@@ -174,13 +178,17 @@ class PluginGaletteCourses extends GalettePlugin
         ];
 
         // Tuile "Mes seances comme moniteur" — visible si l'adherent
-        //  - est responsable de groupe (peut se proposer volontaire), OU
+        //  - est responsable de groupe pur (ni admin ni staff) — peut se
+        //    proposer volontaire, OU
         //  - est deja moniteur d'au moins une seance.
-        // Les admin et staff ne voient pas la tuile par defaut.
+        // Les admin et staff ne voient pas la tuile par defaut, meme s'ils
+        // sont aussi groupManager — sauf s'ils sont affectes comme moniteur.
         if ($login !== null && $login->isLogged()) {
             $memberId = (int)$login->id;
-            $canSeeInstructorPage
-                = $login->isGroupManager()
+            $isPureGroupManager = $login->isGroupManager()
+                && !$login->isAdmin()
+                && !$login->isStaff();
+            $canSeeInstructorPage = $isPureGroupManager
                 || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
             if ($canSeeInstructorPage) {
                 $tiles[] = [

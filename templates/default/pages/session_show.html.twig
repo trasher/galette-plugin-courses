@@ -506,6 +506,7 @@
 
             {# --- Registered members list (admin/staff/group manager) --- #}
             {% set can_mark_attendance = (login.isAdmin() or login.isStaff() or login.isGroupManager()) and session.getSessionDate() <= "now"|date("Y-m-d") %}
+            {% set can_cancel_registration = login.isAdmin() or login.isStaff() or is_instructor %}
             {% if (login.isAdmin() or login.isStaff() or login.isGroupManager()) and registrations|length > 0 %}
                 <div class="ui segment">
                     <div class="courses-section-header">
@@ -531,6 +532,20 @@
                     </div>
                     <div class="ui divider courses-divider-top0"></div>
 
+                    {% if can_cancel_registration %}
+                        {# Out-of-band cancel forms (HTML5 `form` attribute lets the in-table button submit them
+                           without nesting a form inside the mark-attendance form). #}
+                        {% for reg in registrations %}
+                            <form id="cancel-reg-{{ reg.getId() }}"
+                                  action="{{ url_for("coursesDoProxyUnregister", {"id": session.getId()}) }}"
+                                  method="post"
+                                  class="courses-hidden-form">
+                                <input type="hidden" name="member_id" value="{{ reg.getMemberId() }}">
+                                {% include 'components/forms/csrf.html.twig' %}
+                            </form>
+                        {% endfor %}
+                    {% endif %}
+
                     {% if can_mark_attendance %}
                         <form action="{{ url_for("coursesDoMarkAttendance", {"id": session.getId()}) }}" method="post" class="ui form">
                             <table class="ui compact table courses-attendance-list">
@@ -540,6 +555,7 @@
                                         <th>{{ _T("Nickname", "courses") }}</th>
                                         <th>{{ _T("Registration date", "courses") }}</th>
                                         <th>{{ _T("Attendance", "courses") }}</th>
+                                        {% if can_cancel_registration %}<th></th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -579,6 +595,17 @@
                                                     {% endif %}
                                                 </select>
                                             </td>
+                                            {% if can_cancel_registration %}
+                                                <td data-label="{{ _T("Actions", "courses") }}" class="courses-attlist-actions">
+                                                    <button type="submit"
+                                                            form="cancel-reg-{{ reg.getId() }}"
+                                                            class="ui mini red icon button"
+                                                            title="{{ _T("Cancel registration", "courses") }}"
+                                                            onclick="return confirm('{{ _T("Cancel this registration?", "courses")|e('js') }}');">
+                                                        <i class="times icon" aria-hidden="true"></i>
+                                                    </button>
+                                                </td>
+                                            {% endif %}
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -595,6 +622,17 @@
                         <div class="ui relaxed divided list">
                             {% for reg in registrations %}
                                 <div class="item">
+                                    {% if can_cancel_registration %}
+                                        <div class="right floated content">
+                                            <button type="submit"
+                                                    form="cancel-reg-{{ reg.getId() }}"
+                                                    class="ui mini red icon button"
+                                                    title="{{ _T("Cancel registration", "courses") }}"
+                                                    onclick="return confirm('{{ _T("Cancel this registration?", "courses")|e('js') }}');">
+                                                <i class="times icon" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
                                     <i class="user circle big icon" aria-hidden="true"></i>
                                     <div class="content">
                                         <div class="header">

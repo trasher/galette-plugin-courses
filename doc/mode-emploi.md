@@ -533,6 +533,17 @@ Les responsables de groupe et le staff peuvent inscrire un adherent a une seance
 
 Les membres deja inscrits sont exclus de la liste. L'inscription est enregistree au nom du membre selectionne, avec une indication que l'inscription a ete effectuee par procuration.
 
+### 20. Annuler l'inscription d'un membre (moniteur/staff/admin)
+
+Le **staff**, les **administrateurs** et les **moniteurs affectes a la seance** peuvent annuler l'inscription d'un membre depuis la page de detail de la seance :
+
+1. Aller sur la page de detail de la seance
+2. Dans la liste **"Membres inscrits"**, un bouton rouge **X** s'affiche en bout de ligne pour chaque inscrit
+3. Cliquer sur **X** ; une confirmation s'affiche
+4. Valider — l'inscription est marquee comme annulee, la jauge est decrementee et la premiere personne sur liste d'attente est promue automatiquement (et notifiee par email) si applicable
+
+A la difference de la desinscription par le membre lui-meme, le delai de desinscription configure sur l'evenement n'est **pas** controle ici : staff/moniteur peuvent corriger une inscription a tout moment.
+
 ---
 
 ## Preferences de notifications (adherent)
@@ -850,6 +861,7 @@ Toutes les routes sont prefixees par `/plugins/courses/`.
 | POST | `/session/{id}/walk-in` | Ajouter une presence hors inscription (moniteur/staff) |
 | GET | `/session/{id}/proxy-register` | Formulaire d'inscription par procuration |
 | POST | `/session/{id}/proxy-register` | Inscrire un membre par procuration |
+| POST | `/session/{id}/proxy-unregister` | Annuler une inscription (staff/admin/moniteur de la seance) |
 | GET | `/session/{id}/parent-register` | Formulaire d'inscription d'un enfant (parent) |
 | POST | `/session/{id}/parent-register` | Inscrire un enfant (parent) |
 | POST | `/session/{id}/parent-unregister` | Desinscrire un enfant (parent) |

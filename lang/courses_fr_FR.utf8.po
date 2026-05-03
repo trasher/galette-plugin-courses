@@ -169,6 +169,9 @@ msgstr "Voir mes inscriptions et m'inscrire aux prochaines séances"
 msgid "Register for sessions and view your registrations"
 msgstr "S'inscrire aux séances et consulter mes inscriptions"
 
+msgid "View the sessions where you are registered as instructor"
+msgstr "Voir les séances où je suis affecté comme moniteur"
+
 # --- Event statuses ---
 msgid "Draft"
 msgstr "Brouillon"
