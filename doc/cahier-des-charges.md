@@ -268,11 +268,13 @@ Le developpement est organise en phases progressives.
 
 #### F10.4 - Generation automatique par cron
 
-- Nouveau controleur `CronController` et route `GET /cron/generate-sessions` (SANS middleware authenticate)
-- Securite par token : token verifie contre la valeur stockee en preferences, refus si absent ou invalide
-- Parcourt tous les evenements recurrents valides, appelle `RecurrenceHandler::generateSessions()` pour chacun
-- Envoie les notifications email si notifications activees et nouvelles seances generees
-- Retourne un rapport en texte brut (nombre d'evenements traites, de seances generees, erreurs)
+- Controleur `CronController` (lib/GaletteCourses/Controllers/CronController.php), deux routes (SANS middleware authenticate, securite par token uniquement) :
+  - `GET /cron/generate-sessions?token=XXX` : route principale, conservee depuis Phase 10. Genere les seances recurrentes ET, depuis Phase 36, declenche le digest moniteur en fin d'execution (`sendDailyDigest()`). C'est la **route a programmer en crontab**.
+  - `GET /cron/send-digest?token=XXX` : route ajoutee Phase 36, sweep autonome de la queue digest moniteur, sans generation de seances. Utile pour les setups qui veulent decoupler les deux operations sur deux creneaux horaires distincts.
+- Securite par token : token verifie contre la valeur stockee en preferences (`PluginPreferences::CRON_TOKEN`, 24 octets en hex via `random_bytes(24)`), comparaison constant-time via `hash_equals`, refus 403 si absent ou invalide.
+- `generateSessions` parcourt tous les evenements recurrents valides, appelle `RecurrenceHandler::generateSessions()` pour chacun, empile les invitations moniteur dans la queue `pending_notifications` via `notifyNewSessions`, puis appelle `$notification->sendDailyDigest()` pour vider la queue.
+- Retourne un rapport en texte brut : nombre d'evenements traites, seances generees par evenement, et compteurs digest (`Digest: N email(s) sent, M session(s) listed, K error(s)`).
+- Configuration recommandee : 1 entree crontab unique a 6h du matin (`0 6 * * * curl -s "https://.../cron/generate-sessions?token=..." > /dev/null`). Latence d'envoi du digest = jusqu'a 24h, accepte (cf. Phase 36).
 
 #### F10.5 - Refonte page statistiques
 

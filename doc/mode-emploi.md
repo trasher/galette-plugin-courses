@@ -573,10 +573,49 @@ La section **"Generation automatique des seances"** affiche une URL a transmettr
 
 - L'URL contient un **code de securite** unique (genere automatiquement)
 - Cliquer sur l'icone **copier** pour copier l'URL dans le presse-papier
-- Transmettre l'URL a votre administrateur systeme pour qu'il programme la tache (exemple : chaque jour a 1h du matin)
-- Si de nouvelles seances sont generees, les adherents eligibles sont notifies par email (si les notifications sont activees)
-- Chaque generation de seances est enregistree dans le **journal Galette** (menu Historique) avec le detail par evenement (nombre de seances creees)
+- Transmettre l'URL a votre administrateur systeme pour qu'il programme la tache (exemple : chaque jour a 6h du matin)
+- Cette tache effectue **deux operations en une seule passe** :
+  1. **Generation des nouvelles seances** des evenements recurrents valides (fenetre de generation = parametre `advance_weeks`)
+  2. **Envoi du digest quotidien moniteur** : sweep de la queue d'invitations accumulees pendant la journee, regroupement par responsable de groupe, et envoi d'un seul mail consolide listant toutes les seances en attente d'un moniteur (Phase 36)
+- Chaque generation de seances est enregistree dans le **journal Galette** (menu Historique) avec le detail par evenement (nombre de seances creees) et le compte d'emails de digest envoyes
 - Cette URL est publique mais protegee par le code de securite — seule cette URL permet de declencher la generation
+
+#### Configuration de la tache cron (responsable technique)
+
+Sur un serveur Linux, ajouter une seule ligne dans la crontab :
+
+```cron
+0 6 * * * curl -s "https://VOTRE_DOMAINE/plugins/courses/cron/generate-sessions?token=VOTRE_TOKEN" > /dev/null
+```
+
+Remplacer `VOTRE_DOMAINE` et `VOTRE_TOKEN` par les valeurs affichees dans la section **Generation automatique des seances** des preferences. **Cette unique entree cron suffit** : elle declenche la generation des seances ET l'envoi du digest moniteur.
+
+**Horaire recommande** : tot le matin (6h-8h). Les responsables qui se sont portes volontaires la veille au soir (ou les nouvelles seances creees dans la nuit) sont visibles a leur prochaine consultation des emails. La latence maximum entre la creation d'une seance et la reception du mail digest est de **24 heures** ; ce tradeoff a ete accepte pour atteindre l'objectif "1 mail/jour max" pour les responsables multi-groupes.
+
+#### Endpoint dedie au digest (optionnel, multi-creneaux)
+
+Si vous souhaitez separer les deux operations (par exemple : digest tot le matin, generation un peu plus tard), un second endpoint est disponible :
+
+```cron
+0 6 * * * curl -s "https://VOTRE_DOMAINE/plugins/courses/cron/send-digest?token=VOTRE_TOKEN" > /dev/null
+0 7 * * * curl -s "https://VOTRE_DOMAINE/plugins/courses/cron/generate-sessions?token=VOTRE_TOKEN" > /dev/null
+```
+
+Note : la deuxieme commande appellera quand meme `sendDailyDigest()` en fin d'execution, mais la queue sera deja vide (sweepee par la premiere) — pas de doublon de mail, juste une passe a vide.
+
+#### Verification
+
+Apres execution, le retour HTTP contient un resume textuel :
+
+```
+[2026-05-04 06:00:01] Auto-generation complete. 12 session(s) created.
+Cours debutant: 4 session(s) created
+Cours ado: 4 session(s) created
+Entrainement adulte: 4 session(s) created
+Digest: 3 email(s) sent, 18 session(s) listed, 0 error(s).
+```
+
+Le compte `Digest: N email(s) sent` confirme l'envoi du digest moniteur. Si une seance est creee mais qu'aucun moniteur n'est responsable de son groupe (ou que tous se sont desinscrits des notifications), le compteur reste a 0 — c'est normal.
 
 ---
 
