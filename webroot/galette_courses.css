@@ -533,10 +533,3 @@ tr.courses-pending { background-color: #fffde7 !important; }
 @media only screen and (max-width: 767px) {
     .courses-filter-actions .button { flex: 1 1 auto; }
 }
-
-/* Hide helper for filter cards.
-   Fomantic UI sets `.ui.grid > .column { display: ... !important }` on
-   stackable grids, which overrides the inline `display:none` posed by
-   jQuery's $.fn.toggle()/hide(). We need !important to actually hide
-   filtered-out cards in browse grids. */
-.courses-hidden { display: none !important; }

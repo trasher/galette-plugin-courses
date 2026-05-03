@@ -120,10 +120,6 @@
                     {{ _T("Clear filter", "courses") }}
                 </button>
             </div>
-            {# DEBUG temporaire — montre l'etat du filtre, a retirer une fois confirme que le filtre marche #}
-            <div id="browse-filter-debug" style="margin-top:.5em; padding:.4em .6em; background:#fffde7; border:1px solid #fbc02d; border-radius:.25em; font-family:monospace; font-size:.85em; color:#5d4037;">
-                debug : (en attente d'un changement de filtre)
-            </div>
         </div>
     </div>
     {% endif %}
@@ -663,17 +659,12 @@ $(function() {
         var fName = $('#browse_name_filter').val() || '';
         var fDate = $('#browse_date_from').val() || '';
         var visible = 0;
-        var total = 0;
-        var sampleNames = [];
 
         $('#browse-cards-grid .courses-browse-card-col').each(function() {
             var $col = $(this);
             var cType = ($col.attr('data-type-id') || '').toString();
             var cName = ($col.attr('data-event-name') || '').toString();
             var cDate = $col.attr('data-date') || '';
-
-            total++;
-            if (sampleNames.length < 3) sampleNames.push(cName);
 
             var show = true;
             if (fType && cType !== fType.toString())                                show = false;
@@ -696,18 +687,6 @@ $(function() {
         if ($badge.length) {
             $badge.text(visible);
             $badge.toggle(visible > 0);
-        }
-
-        // DEBUG temporaire — afficher l'etat du filtre dans la zone debug
-        var $dbg = $('#browse-filter-debug');
-        if ($dbg.length) {
-            $dbg.text(
-                'debug : fType=' + JSON.stringify(fType) +
-                ' | fName=' + JSON.stringify(fName) +
-                ' | fDate=' + fDate +
-                ' | cartes ' + visible + '/' + total +
-                ' | exemples noms cartes: ' + JSON.stringify(sampleNames)
-            );
         }
     }
 

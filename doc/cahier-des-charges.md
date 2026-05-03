@@ -631,31 +631,34 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
-### Phase 31 - Filtres "Trouver une seance" : selects natifs + bouton Filtrer (fiabilite)
+### Phase 31 - Filtres "Trouver une seance" : selects natifs + bouton Filtrer + masquage force des cartes
 
 **Statut : TERMINEE**
 
-- Probleme remonte : sur les pages *Mes inscriptions* et *Mes seances comme moniteur* (onglet *Trouver une seance*), la selection d'une valeur dans les dropdowns Type ou Activite ne filtrait pas les cartes affichees. Deux tentatives de correction precedentes (commits `0213100`, `31a19d3`) ont essaye de fiabiliser l'integration Fomantic UI (cascade des options, callback `onChange`, lecture via `dropdown('get value')`, etat local) sans succes : la synchronisation entre le widget Fomantic et la valeur du `<select>` sous-jacent restait imprevisible dans la stack du projet, et l'evenement `change` natif n'etait pas declenche de facon fiable.
+- Probleme remonte : sur les pages *Mes inscriptions* et *Mes seances comme moniteur* (onglet *Trouver une seance*), la selection d'une valeur dans les dropdowns Type ou Activite ne filtrait pas les cartes affichees.
 
-- Fix retenu (commit `3f2ef1b`) : abandon de Fomantic UI pour ces filtres specifiques au profit de `<select>` HTML natifs.
-  - Suppression de `class="ui search dropdown"` sur `#browse_type_filter`, `#browse_name_filter`, `#instr_browse_type_filter`, `#instr_browse_name_filter` -> remplacee par `class="courses-native-select"`.
-  - L'evenement `change` natif est universellement fiable (desktop + mobile + accessibilite), pas de timing d'init a gerer.
-  - Le JS `applyBrowseFilters()` lit directement `$('#xxx').val()` sur des selects natifs (toujours synchronisee).
-  - Lecture des attributs des cartes via `.attr('data-...')` plutot que `.data(...)` pour eviter le cache jQuery.
-  - Comparaison Activite : trim + lowercase pour tolerer les ecarts de casse / espaces.
+- Trois tentatives de correction infructueuses avant le diagnostic correct :
+  1. Commit `0213100` : passage de l'evenement `change` natif a la callback `onChange` de Fomantic UI -> le callback s'executait peut-etre, mais la valeur retournee par `$select.val()` restait vide.
+  2. Commit `31a19d3` : passage en etat local lu depuis `onChange(value)` au lieu de `.val()` -> meme echec, ce qui a fait penser que le callback ne s'executait pas du tout.
+  3. Commit `3f2ef1b` : abandon de Fomantic UI au profit de `<select>` HTML natifs (`class="courses-native-select"` a la place de `class="ui search dropdown"`) + ajout d'un bouton **Filtrer** explicite -> le JS lisait bien la valeur (`fName="Cours éducation - Niveau ado"`) et calculait correctement les cartes a masquer (`cartes 3/9`), mais les 6 cartes non-correspondantes restaient visiblement affichees.
 
-- Ajout d'un bouton **Filtrer** explicite (`#browse_apply_filter`, `#instr_browse_apply_filter`) a cote du bouton **Effacer le filtre**, sur suggestion utilisateur. Garantit le declenchement quel que soit le canal de saisie (touchscreen quirks, lecteurs d'ecran, doutes utilisateur). Les filtres restent egalement dynamiques (`change` declenche un re-filtrage immediat).
+- Diagnostic via instrumentation visible (commits `3850c9f`, `55603e6`) : ajout d'une zone jaune sous le bouton "Effacer le filtre" affichant en temps reel `fType`, `fName`, `fDate`, `cartes visible/total` et un echantillon des `data-event-name`. Le retour utilisateur (`debug : fType="" | fName="Cours éducation - Niveau ado" | cartes 3/9`) a montre que la logique JS etait correcte mais que le masquage CSS ne s'appliquait pas.
 
-- CSS `webroot/galette_courses.css` :
-  - Nouvelle classe `.courses-native-select` : style coherent avec `.ui.input` (border, padding, border-radius, focus state).
-  - Nouvelle classe `.courses-filter-actions` : flex container pour la barre de boutons (Filtrer + Effacer), boutons pleine largeur sur mobile (`max-width: 767px`).
+- Cause racine : Fomantic UI applique une regle CSS `.ui.grid > .column { display: ... !important }` sur les colonnes de la grille `<div class="ui stackable three column grid">`. Cette regle a une specificite (0,2,1) plus elevee que toute classe simple, et tient meme contre `display: none !important` pose en classe externe. Resultat : `$col.toggle(false)` puis `$col.toggleClass('courses-hidden', true)` (commits `af40596`) ne masquaient rien.
 
-- Fichiers modifies :
-  - `templates/default/pages/my_registrations.html.twig` : selects natifs + bouton Filtrer + JS simplifie (lecture .val() directe).
-  - `templates/default/pages/my_instructor_sessions.html.twig` : meme refonte sur l'onglet *Trouver une seance*.
-  - `webroot/galette_courses.css` : classes `.courses-native-select` et `.courses-filter-actions`.
+- Fix definitif (commit `563a59c`) : poser le `display: none !important` **en inline directement sur le DOM** via l'API native `element.style.setProperty('display', 'none', 'important')`. Un style inline `!important` bat n'importe quelle regle CSS externe, peu importe sa specificite. Symetriquement, `element.style.removeProperty('display')` pour reafficher.
 
-- Doc utilisateur (`doc/mode-emploi.md`) : ajout du bouton **Filtrer** dans la section "Onglet Trouver une seance" et dans la description de la page "Mes seances comme moniteur".
+- Resume des modifications retenues sur cette phase (les commits intermediaires sont de l'iteration de debug) :
+  - Templates `my_registrations.html.twig` et `my_instructor_sessions.html.twig` :
+    - Selects natifs (`class="courses-native-select"`, plus de Fomantic UI dropdown).
+    - Bouton **Filtrer** (`#browse_apply_filter` / `#instr_browse_apply_filter`) en plus de **Effacer le filtre**.
+    - JS : lecture directe via `.val()`, comparaison Activite trim+lowercase, masquage via `style.setProperty('display', 'none', 'important')`.
+  - CSS `webroot/galette_courses.css` :
+    - Nouvelle classe `.courses-native-select` : style coherent avec `.ui.input` (border, padding, border-radius, focus state).
+    - Nouvelle classe `.courses-filter-actions` : flex container pour la barre de boutons, boutons pleine largeur sur mobile (`max-width: 767px`).
+  - Doc utilisateur (`doc/mode-emploi.md`) : ajout du bouton **Filtrer** dans la section "Onglet Trouver une seance" et dans la description de la page "Mes seances comme moniteur".
+
+- Lecons retenues (memoire) : pour masquer un element a l'interieur d'une grille Fomantic UI (ou de tout conteneur dont le CSS pose `display: ... !important` sur les enfants), `$.fn.toggle()`, `$.fn.hide()` et meme `toggleClass` sur une classe externe `display: none !important` sont insuffisants. Utiliser `element.style.setProperty('display', 'none', 'important')` directement.
 
 ### Phase 30 - Page "Mes seances comme moniteur" en deux onglets (Trouver / Mes seances)
 
