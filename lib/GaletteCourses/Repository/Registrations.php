@@ -94,10 +94,10 @@ class Registrations
     public function getForSession(int $sessionId): array
     {
         try {
-            $select = $this->zdb->select(Registration::TABLE);
-            $select->where(['session_id' => $sessionId]);
-            $select->where->notEqualTo('status', Registration::STATUS_CANCELLED);
-            $select->order('registration_date ASC');
+            $select = $this->zdb->select(Registration::TABLE, 'r');
+            $select->where(['r.session_id' => $sessionId]);
+            $select->where->notEqualTo('r.status', Registration::STATUS_CANCELLED);
+            $select->order('r.registration_date ASC');
 
             $results = $this->zdb->execute($select);
             $registrations = [];

@@ -59,7 +59,7 @@ galette-plugin-courses/
   CLAUDE.md                        # Ce fichier
   _config.inc.php                  # Constante COURSES_PREFIX
   _define.php                      # Enregistrement plugin + ACLs
-  _routes.php                      # Routes Slim (50 routes)
+  _routes.php                      # Routes Slim (59 routes)
   scripts/mysql.sql                # Schema BDD (12 tables)
   scripts/upgrade-unsubscribe.sql  # Migration: ajout unsubscribe_token
   scripts/upgrade-digest.sql       # Migration: queue pending_notifications (digest quotidien)
@@ -113,6 +113,7 @@ galette-plugin-courses/
       session_show.html.twig
       session_edit.html.twig
       my_registrations.html.twig
+      my_instructor_sessions.html.twig
       registrations_list.html.twig
       stats.html.twig
       preferences.html.twig

@@ -74,6 +74,7 @@ Pour un evenement ponctuel, une seance unique est creee automatiquement a la cre
 | `galette_courses_preferences` | Preferences globales du plugin |
 | `galette_courses_mail_templates` | Modeles d'emails personnalisables |
 | `galette_courses_member_preferences` | Preferences par membre (notifications, code de desabonnement) |
+| `galette_courses_pending_notifications` | Queue digest quotidien des invitations moniteur (Phase 36) |
 
 ---
 
