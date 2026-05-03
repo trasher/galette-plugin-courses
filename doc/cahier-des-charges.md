@@ -631,6 +631,18 @@ Le developpement est organise en phases progressives.
 
 **Bilan : 35 tests verts en ~200 ms ; aucun test ne touche a une vraie BDD (full mocks + stubs Laminas).**
 
+### Phase 32 - Acces "Mes seances comme moniteur" elargi aux roles admin / staff / responsable de groupe
+
+**Statut : TERMINEE**
+
+- Demande utilisateur : un responsable de groupe (potentiel moniteur) doit pouvoir acceder a la page "Mes seances comme moniteur" meme s'il n'a pas (encore) de seance assignee. C'est par cette page qu'il peut se proposer comme moniteur via l'onglet *Trouver une seance*.
+
+- Avant : la condition d'affichage du menu et de la tuile dashboard etait `countSessionsForMember > 0` uniquement -> un responsable de groupe sans affectation n'avait aucun moyen de decouvrir cette page.
+
+- Apres (`PluginGaletteCourses::getMenusContents()` et `getDashboardsContents()`) : la condition devient `isAdmin() || isStaff() || isGroupManager() || (countSessionsForMember > 0)`. Le seul cas ou l'entree reste cachee est celui d'un membre regulier sans aucune affectation (qui ne peut de toute facon pas se proposer volontaire — l'auto-volontariat reste reserve aux admins/staff/responsables de groupe par `doVolunteerInstructor`).
+
+- Doc utilisateur (`doc/mode-emploi.md`) : section "Mes seances comme moniteur" mise a jour pour expliciter les conditions de visibilite par role.
+
 ### Phase 31 - Filtres "Trouver une seance" : selects natifs + bouton Filtrer + masquage force des cartes
 
 **Statut : TERMINEE**

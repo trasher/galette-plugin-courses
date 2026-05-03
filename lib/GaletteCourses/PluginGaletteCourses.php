@@ -51,10 +51,18 @@ class PluginGaletteCourses extends GalettePlugin
             'icon'  => 'calendar check',
         ];
 
-        // Lien "Mes seances comme moniteur" : visible uniquement si le membre
-        // est moniteur d'au moins une seance (evite de polluer le menu).
+        // Lien "Mes seances comme moniteur" : visible si le membre
+        //  - est deja moniteur d'au moins une seance, OU
+        //  - peut le devenir : admin, staff, ou responsable de groupe
+        //    (l'onglet "Trouver une seance" leur permet de se proposer
+        //    comme moniteur, meme sans affectation actuelle).
         $memberId = (int)$login->id;
-        if ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
+        $canSeeInstructorPage =
+            $login->isAdmin()
+            || $login->isStaff()
+            || $login->isGroupManager()
+            || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
+        if ($canSeeInstructorPage) {
             $memberItems[] = [
                 'label' => _T('My instructor sessions', 'courses'),
                 'route' => ['name' => 'coursesMyInstructorSessions'],
@@ -164,11 +172,18 @@ class PluginGaletteCourses extends GalettePlugin
             ],
         ];
 
-        // Tuile "Mes seances comme moniteur" — visible uniquement si l'adherent
-        // connecte est moniteur d'au moins une seance.
+        // Tuile "Mes seances comme moniteur" — visible si l'adherent
+        //  - est deja moniteur d'au moins une seance, OU
+        //  - peut le devenir : admin, staff, ou responsable de groupe
+        //    (peut se proposer comme moniteur via l'onglet Trouver une seance).
         if ($login !== null && $login->isLogged()) {
             $memberId = (int)$login->id;
-            if ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0) {
+            $canSeeInstructorPage =
+                $login->isAdmin()
+                || $login->isStaff()
+                || $login->isGroupManager()
+                || ($memberId > 0 && SessionInstructor::countSessionsForMember($zdb, $memberId) > 0);
+            if ($canSeeInstructorPage) {
                 $tiles[] = [
                     'label' => _T('My instructor sessions', 'courses'),
                     'title' => _T('View the sessions where you are registered as instructor', 'courses'),

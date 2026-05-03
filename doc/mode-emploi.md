@@ -740,7 +740,11 @@ La page **Mes inscriptions** comprend deux onglets :
 - **Trouver une seance** : catalogue des seances disponibles avec filtres (type, activite, date) et inscription directe
 - **Mes inscriptions** : seances a venir, annulees et passees
 
-La page **Mes seances comme moniteur** est visible uniquement pour les membres affectes a au moins une seance comme instructeur (assignation par le staff ou auto-volontariat depuis la page de seance pour un responsable de groupe). Elle presente deux onglets :
+La page **Mes seances comme moniteur** est visible pour :
+- les **admins**, **staff** et **responsables de groupe** — meme sans seance comme moniteur — afin qu'ils puissent se proposer comme moniteur via l'onglet *Trouver une seance* ;
+- tout autre membre regulier affecte a au moins une seance comme instructeur (assignation par le staff).
+
+Elle presente deux onglets :
 - **Trouver une seance** : catalogue des seances sans moniteur ou l'utilisateur peut se proposer (avec filtres Type / Activite / Date et boutons **"Filtrer"** + **"Effacer le filtre"**, identiques a "Mes inscriptions")
 - **Mes seances comme moniteur** : seances groupees en quatre sections (*Prochaine seance*, *A venir*, *Annulees*, *Passees* repliable). Chaque carte affiche le nom de l'evenement, la date, le lieu, le ou les moniteurs, la jauge d'inscrits, et propose les boutons **Details**, **iCal** et — si l'utilisateur est responsable de groupe, staff ou admin — **Export CSV des inscrits**.
 
