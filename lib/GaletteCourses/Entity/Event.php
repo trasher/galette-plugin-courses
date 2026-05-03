@@ -64,6 +64,7 @@ class Event
 
     /** @var array<int> */
     private array $groups = [];
+    private bool $groups_loaded = false;
     /** @var array<array<string, string>> */
     private array $slots = [];
 
@@ -125,10 +126,14 @@ class Event
         $this->creator_id = (int)$rs->creator_id;
         $this->creation_date = (string)$rs->creation_date;
         $this->modification_date = $rs->modification_date !== null ? (string)$rs->modification_date : null;
+        $this->groups_loaded = false;
     }
 
     public function loadGroups(): void
     {
+        if ($this->groups_loaded) {
+            return;
+        }
         try {
             $select = $this->zdb->select('courses_events_groups');
             $select->where(['event_id' => $this->id]);
@@ -137,6 +142,7 @@ class Event
             foreach ($results as $r) {
                 $this->groups[] = (int)$r->group_id;
             }
+            $this->groups_loaded = true;
         } catch (Throwable $e) {
             Analog::log(
                 'Error loading groups for event #' . $this->id . ': ' . $e->getMessage(),
@@ -324,6 +330,7 @@ class Event
                 ]);
                 $this->zdb->execute($insert);
             }
+            $this->groups_loaded = false;
             return true;
         } catch (Throwable $e) {
             Analog::log(

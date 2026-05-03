@@ -230,6 +230,16 @@ class Session
         return $this->event;
     }
 
+    /**
+     * Inject a pre-loaded Event so getEvent() does not re-query.
+     * Used by callers that batch-load events for many sessions
+     * (e.g. SessionsController::list) to avoid an N+1 in templates.
+     */
+    public function setEvent(Event $event): void
+    {
+        $this->event = $event;
+    }
+
     public function getCapacityPercent(): int
     {
         if ($this->max_capacity === null || $this->max_capacity === 0) {

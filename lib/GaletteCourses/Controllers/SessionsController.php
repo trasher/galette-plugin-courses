@@ -81,6 +81,18 @@ class SessionsController extends AbstractPluginController
         $sessions = $sessions_repo->getList();
         $available_names = $sessions_repo->getAvailableNames();
 
+        // Pre-load events deduplicated by id, then inject into each Session so
+        // template calls to session.getEvent() return the cached instance —
+        // avoids one Event SELECT per session row in sessions_list.html.twig.
+        $events_by_id = [];
+        foreach ($sessions as $s) {
+            $eid = $s->getEventId();
+            if (!isset($events_by_id[$eid])) {
+                $events_by_id[$eid] = new Event($this->zdb, $eid);
+            }
+            $s->setEvent($events_by_id[$eid]);
+        }
+
         // Batch-load instructor names for all sessions in one JOIN query
         $session_ids = array_map(fn($s) => $s->getId(), $sessions);
         $batch_instructor_names = SessionInstructor::getInstructorNamesForSessions($this->zdb, $session_ids);
@@ -1295,6 +1307,50 @@ class SessionsController extends AbstractPluginController
     {
         return $session->getStatus() !== Session::STATUS_CANCELLED
             && $session->getSessionDate() >= date('Y-m-d');
+    }
+
+    /**
+     * Batch-load display data (sname + nickname) for a set of member ids in
+     * one SELECT, replacing the per-id `new Adherent()` pattern that produced
+     * an N+1 in the session detail page.
+     *
+     * Recomposes Adherent::sname (uppercase last name + capitalized first
+     * name) from raw columns to keep visual identity with the magic getter.
+     *
+     * @param array<int> $memberIds
+     * @return array<int, array{sname: string, nickname: string}>
+     */
+    private function batchLoadMemberDisplay(array $memberIds): array
+    {
+        if (empty($memberIds)) {
+            return [];
+        }
+        $unique = array_values(array_unique(array_map('intval', $memberIds)));
+        $result = [];
+        try {
+            $select = $this->zdb->select(\Galette\Entity\Adherent::TABLE, 'a');
+            $select->columns(['id_adh', 'nom_adh', 'prenom_adh', 'pseudo_adh']);
+            $select->where->in('a.id_adh', $unique);
+            foreach ($this->zdb->execute($select) as $r) {
+                $name    = (string)($r->nom_adh ?? '');
+                $surname = (string)($r->prenom_adh ?? '');
+                $sname   = trim(
+                    mb_strtoupper($name, 'UTF-8')
+                    . ' '
+                    . ucwords(mb_strtolower($surname, 'UTF-8'), " \t\r\n\f\v-")
+                );
+                $result[(int)$r->id_adh] = [
+                    'sname'    => $sname,
+                    'nickname' => (string)($r->pseudo_adh ?? ''),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Analog::log(
+                'Batch member display load failed: ' . $e->getMessage(),
+                Analog::ERROR
+            );
+        }
+        return $result;
     }
 
     public function redirectUri(array $args): string
