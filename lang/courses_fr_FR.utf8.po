@@ -1328,6 +1328,9 @@ msgstr "Événement rejeté"
 msgid "New sessions generated (instructors)"
 msgstr "Nouvelles séances générées (moniteurs)"
 
+msgid "Daily digest — sessions to lead"
+msgstr "Digest quotidien — séances à encadrer"
+
 msgid "Promoted from waitlist"
 msgstr "Promu depuis la liste d'attente"
 
@@ -1346,8 +1349,11 @@ msgstr "Envoyé au créateur de l'événement lorsque son événement est valid�
 msgid "Sent to the event creator when their event is rejected."
 msgstr "Envoyé au créateur de l'événement lorsque son événement est rejeté."
 
-msgid "Sent to group managers when new sessions are generated (or a cancelled session is reactivated without instructor), so they can volunteer as instructor."
-msgstr "Envoyé aux responsables de groupe lorsque de nouvelles séances sont générées (ou qu'une séance annulée est réactivée sans moniteur), pour qu'ils puissent se porter volontaires comme moniteur."
+msgid "Sent to group managers when new sessions are generated (or a cancelled session is reactivated without instructor), so they can volunteer as instructor. Note: in normal operation this template is replaced by the daily digest — it remains available for direct manual sends."
+msgstr "Envoyé aux responsables de groupe lorsque de nouvelles séances sont générées (ou qu'une séance annulée est réactivée sans moniteur), pour qu'ils puissent se porter volontaires comme moniteur. Note : en fonctionnement normal, ce modèle est remplacé par le digest quotidien — il reste disponible pour des envois manuels directs."
+
+msgid "Daily consolidated email sent by the cron to each group manager, listing all sessions still without an instructor. Replaces the per-event \"new sessions\" emails to limit inbox flooding."
+msgstr "Courriel quotidien consolidé envoyé par le cron à chaque responsable de groupe, listant toutes les séances encore sans moniteur. Remplace les courriels « nouvelles séances » individuels pour limiter le volume reçu."
 
 msgid "Sent to a member when they are automatically promoted from the waitlist."
 msgstr "Envoyé à un membre lorsqu'il est automatiquement promu depuis la liste d'attente."
@@ -1422,6 +1428,9 @@ msgstr "[Cours] Votre événement n'a pas été retenu – {event_name}"
 msgid "[Courses] New sessions — volunteer as instructor: {event_name}"
 msgstr "[Cours] Nouvelles séances — se porter volontaire comme moniteur : {event_name}"
 
+msgid "[Courses] Sessions awaiting an instructor"
+msgstr "[Cours] Séances en attente d'un moniteur"
+
 msgid "[Courses] You have been registered: {event_name}"
 msgstr "[Cours] Inscription confirmée – {event_name}"
 
@@ -1491,6 +1500,23 @@ msgstr ""
 "Connectez-vous sur https://adherent.ccag42.org/\n"
 "\n"
 "Merci !"
+
+msgid ""
+"Hello,\n"
+"\n"
+"The sessions listed below are still waiting for an instructor.\n"
+"If you would like to lead one of them, log in and volunteer from the session detail page.\n"
+"\n"
+"{events_block}\n"
+"Thank you for your involvement!"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"Les séances ci-dessous sont encore en attente d'un moniteur.\n"
+"Si vous souhaitez encadrer l'une d'elles, connectez-vous et portez-vous volontaire depuis la page de détail de la séance.\n"
+"\n"
+"{events_block}\n"
+"Merci pour votre engagement !"
 
 msgid ""
 "Hello,\n"
